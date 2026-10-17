@@ -1,4 +1,4 @@
-const VERSION = 'budget-v6';
+const VERSION = 'budget-v7';
 const ASSETS = [
   './', 'index.html', 'manifest.webmanifest', 'css/style.css',
   'js/main.js', 'js/db.js', 'js/store.js', 'js/format.js', 'js/i18n.js', 'js/calc.js',

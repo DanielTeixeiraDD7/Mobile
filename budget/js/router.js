@@ -1,3 +1,5 @@
+import { followCalendar } from './views/month.js';
+
 const views = {};
 let current = 'add';
 
@@ -14,5 +16,6 @@ export function go(name) {
 export function render() {
   const main = document.getElementById('main');
   main.dataset.view = current;
+  followCalendar();
   views[current](main);
 }

@@ -1,6 +1,14 @@
 import { currentMonth, addMonths, monthLabel, esc } from '../format.js';
 
-export const month = { value: currentMonth() };
+let shownCurrent = currentMonth();
+export const month = { value: shownCurrent };
+
+// Passe au nouveau mois si l'app est restée ouverte pendant le changement de mois.
+export function followCalendar() {
+  if (currentMonth() === shownCurrent) return;
+  if (month.value === shownCurrent) month.value = currentMonth();
+  shownCurrent = currentMonth();
+}
 
 export function monthNav() {
   const isCurrent = month.value >= currentMonth();

@@ -27,7 +27,13 @@ function monthLine() {
   </div>`;
 }
 
+let shownToday = today();
+
 export function renderAdd(main) {
+  if (today() !== shownToday) {
+    if (draft.date === shownToday) draft.date = today();
+    shownToday = today();
+  }
   const cats = categoriesOf(draft.type);
   main.innerHTML = `
   <section class="add">
