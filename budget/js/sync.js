@@ -56,7 +56,7 @@ export async function initSync() {
 let listening = false;
 function start() {
   outbox.enable(schedule);
-  sync.status = 'idle';
+  sync.status = 'syncing';
   if (listening) return;
   listening = true;
   window.addEventListener('online', syncNow);
