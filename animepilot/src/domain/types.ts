@@ -71,14 +71,15 @@ export interface Settings {
   titleLanguage: TitleLanguage;
   onboarded: boolean;
   reminderMinutes: number;
-  hideSpoilers: boolean;
+  /** Notifications pendant que l'app est ouverte (aucun serveur push). */
+  notify: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   titleLanguage: 'romaji',
   onboarded: false,
   reminderMinutes: 15,
-  hideSpoilers: true,
+  notify: false,
 };
 
 export const entryId = (type: MediaType, mediaId: number) => `anilist:${type}:${mediaId}`;

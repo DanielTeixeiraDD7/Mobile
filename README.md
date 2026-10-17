@@ -1,4 +1,4 @@
-> Ce dépôt contient deux apps : **FitMaison** (racine, ci-dessous) et **[Budget](budget/README.md)** (dossier `budget/`, https://danielteixeiradd7.github.io/Mobile/budget/).
+> Ce dépôt contient trois apps : **FitMaison** (racine, ci-dessous), **[Budget](budget/README.md)** (https://danielteixeiradd7.github.io/Mobile/budget/) et **[AnimePilot](animepilot/README.md)** (source `animepilot/`, build `anime/`, https://danielteixeiradd7.github.io/Mobile/anime/).
 
 # FitMaison 🔥 – Perte de poids au poids du corps
 

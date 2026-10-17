@@ -18,12 +18,15 @@ src/
     db.ts           schéma versionné et migrations
     repo.ts         lecture / écriture bibliothèque + historique (transactions atomiques)
     store.ts        état en mémoire + abonnement React (useSyncExternalStore)
+    refresh.ts      mise à jour des infos AniList des titres suivis (toutes les 6 h, par lots de 50)
   api/        catalogue AniList
     anilist.ts      client GraphQL : limiteur, annulation, erreurs typées
     queries.ts      requêtes GraphQL
     cache.ts        cache IndexedDB avec durée de vie, repli hors-ligne
     mapper.ts       réponse AniList → MediaSnapshot
-  hooks/      useDebounced, useOnline, useSearch…
+    limiter.ts      limiteur de débit (fenêtre glissante + blocage 429)
+  hooks/      useOnline, useSearch, useDetails, useAiring, useRecommendations
+  reminders.ts  notifications locales (app ouverte) + export .ics
   ui/         composants réutilisables (affiche, toast, feuille modale, icônes)
   screens/    un écran par onglet + fiche, recherche, données, réglages
   sw/sw.js    service worker (modèle, complété au build)

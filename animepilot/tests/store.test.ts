@@ -131,3 +131,19 @@ describe('bibliothèque', () => {
     expect(await db.count('history')).toBe(10);
   });
 });
+
+describe('ajout direct avec statut', () => {
+  beforeEach(async () => { await store.init(`direct-${Math.random()}`); });
+  afterEach(() => store.reset());
+  it('« Terminé » remplit la progression et les dates, annulable', async () => {
+    const r = await store.addToLibrary(media({ id: 3, episodes: 28 }), 'COMPLETED');
+    expect(store.getState().entries[0]).toMatchObject({ status: 'COMPLETED', progress: 28 });
+    expect(store.getState().entries[0]!.completedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect((await store.undo(r.event!.id)).ok).toBe(true);
+    expect(store.getState().entries).toHaveLength(0);
+  });
+  it('« En cours » date le début', async () => {
+    await store.addToLibrary(media({ id: 4 }), 'CURRENT');
+    expect(store.getState().entries[0]!.startedAt).not.toBeNull();
+  });
+});

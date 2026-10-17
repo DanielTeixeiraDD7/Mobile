@@ -1,6 +1,6 @@
 /* Service worker AnimePilot — généré au build (voir vite.config.ts). */
-const VERSION = 'animepilot-9deabe16b1';
-const ASSETS = ["./","assets/index-CV2U-wBh.js","assets/index-DFscQa1G.css","manifest.webmanifest","icons/icon.svg","icons/icon-192.png","icons/icon-512.png","icons/apple-touch-icon.png"];
+const VERSION = 'animepilot-7edf3816a9';
+const ASSETS = ["./","assets/index-D3P6Lb6_.css","assets/index-UZ1fquIN.js","manifest.webmanifest","icons/icon.svg","icons/icon-192.png","icons/icon-512.png","icons/apple-touch-icon.png"];
 const IMAGES = 'animepilot-images';
 const MAX_IMAGES = 400;
 

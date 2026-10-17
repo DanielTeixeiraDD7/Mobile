@@ -88,7 +88,10 @@ async function guarded(id: string, run: () => Promise<{ event: HistoryEvent | nu
 }
 
 export async function addToLibrary(media: MediaSnapshot, status: EntryStatus = 'PLANNING') {
-  const r = await repo.addEntry(getDb(), media, status);
+  // Ajout direct en « Terminé » / « En cours » : mêmes règles qu'un changement de statut.
+  const initial = status === 'PLANNING' ? {} : planStatus(repo.newEntry(media, 'PLANNING'), status, todayIso());
+  delete initial.status;
+  const r = await repo.addEntry(getDb(), media, status, Date.now(), initial);
   if (r.created) set({ entries: upsertLocal(r.entry), history: pushEvent(r.event) });
   return r;
 }
@@ -175,4 +178,20 @@ export async function updateSettings(patch: Partial<Settings>) {
   const settings = { ...state.settings, ...patch };
   await repo.saveSettings(getDb(), settings);
   set({ settings });
+}
+
+/** Import en fusion : écrit les titres retenus + leur historique (sans doublon d'événement). */
+export async function importEntries(entries: LibraryEntry[], history: HistoryEvent[]) {
+  const ids = new Set(entries.map(e => e.id));
+  const known = new Set(state.history.map(h => h.id));
+  const events = history.filter(h => ids.has(h.entryId) && !known.has(h.id));
+  await repo.putEntries(getDb(), entries, events);
+  await reload();
+  return { entries: entries.length, events: events.length };
+}
+
+/** Remplace toute la bibliothèque (import « remplacer tout » ou réinitialisation). */
+export async function replaceLibrary(entries: LibraryEntry[], history: HistoryEvent[]) {
+  await repo.replaceAll(getDb(), entries, history);
+  await reload();
 }

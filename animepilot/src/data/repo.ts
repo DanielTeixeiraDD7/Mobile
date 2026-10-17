@@ -49,14 +49,19 @@ export function newEntry(media: MediaSnapshot, status: EntryStatus, now = Date.n
   };
 }
 
+// Horodatages strictement croissants : l'ordre de l'historique reste exact même à la milliseconde près.
+let lastAt = 0;
+
 function makeEvent(entryIdValue: string, kind: HistoryKind, before: Patch, after: Patch, now: number, snapshot?: LibraryEntry): HistoryEvent {
-  const ev: HistoryEvent = { id: newId(), entryId: entryIdValue, at: now, kind, before, after, undone: false };
+  const at = now > lastAt ? now : lastAt + 1;
+  lastAt = at;
+  const ev: HistoryEvent = { id: newId(), entryId: entryIdValue, at, kind, before, after, undone: false };
   if (snapshot) ev.snapshot = snapshot;
   return ev;
 }
 
 /** Ajoute un titre ; s'il est déjà dans la bibliothèque, renvoie l'existant sans doublon. */
-export async function addEntry(db: APDB, media: MediaSnapshot, status: EntryStatus, now = Date.now()) {
+export async function addEntry(db: APDB, media: MediaSnapshot, status: EntryStatus, now = Date.now(), initial: Patch = {}) {
   const tx = db.transaction(['entries', 'history'], 'readwrite');
   const id = entryId(media.type, media.id);
   const existing = await tx.objectStore('entries').get(id);
@@ -64,8 +69,8 @@ export async function addEntry(db: APDB, media: MediaSnapshot, status: EntryStat
     await tx.done;
     return { entry: existing, event: null, created: false };
   }
-  const entry = newEntry(media, status, now);
-  const event = makeEvent(id, 'add', {}, { status }, now);
+  const entry: LibraryEntry = { ...newEntry(media, status, now), ...initial, status };
+  const event = makeEvent(id, 'add', {}, { ...initial, status }, now);
   await Promise.all([tx.objectStore('entries').put(entry), tx.objectStore('history').put(event), tx.done]);
   return { entry, event, created: true };
 }
@@ -116,7 +121,10 @@ export async function undoEvent(db: APDB, eventId: string, now = Date.now()) {
 
   if (ev.kind === 'add') {
     if (!entry) return fail('Titre déjà supprimé.');
-    if (entry.progress !== 0 || entry.status !== ev.after.status) return fail('Le titre a été modifié depuis son ajout.');
+    for (const k of Object.keys(ev.after) as (keyof TrackedFields)[]) {
+      if (entry[k] !== ev.after[k]) return fail('Le titre a été modifié depuis son ajout.');
+    }
+    if (entry.progress !== (ev.after.progress ?? 0)) return fail('Le titre a été modifié depuis son ajout.');
     await entries.delete(ev.entryId);
   } else if (ev.kind === 'remove') {
     const snap = ev.snapshot;
