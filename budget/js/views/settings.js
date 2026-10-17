@@ -1,10 +1,12 @@
-import { state, setSetting, saveCategory, deleteCategory, categoriesOf, categoryById, replaceAll, PALETTE } from '../store.js';
+import { state, setSetting, saveCategory, deleteCategory, categoriesOf, categoryById, fallbackCategory, replaceAll, PALETTE } from '../store.js';
 import { t, categoryName } from '../i18n.js';
 import { today, esc } from '../format.js';
 import { toCSV, importCSV } from '../csv.js';
 import { toJSON, restoreJSON } from '../backup.js';
 import { sheet, toast, confirmSheet, shareOrDownload, readFile, $ } from '../ui.js';
 import { render } from '../router.js';
+import { sync } from '../sync.js';
+import { shareSection, bindShare } from './share.js';
 
 const CURRENCIES = ['EUR', 'USD', 'GBP', 'CHF', 'BRL', 'CAD', 'AOA', 'CVE', 'MZN', 'XOF', 'MAD', 'JPY'];
 
@@ -12,6 +14,8 @@ export function renderSettings(main) {
   const s = state.settings;
   main.innerHTML = `
   <h1 class="page-title">${esc(t('tab.settings'))}</h1>
+
+  ${shareSection()}
 
   <section class="card">
     <div class="field-row">
@@ -41,7 +45,7 @@ export function renderSettings(main) {
 
   <h2 class="section-title">${esc(t('settings.data'))}</h2>
   <section class="card">
-    <p class="small muted">${esc(t('settings.dataHelp'))}</p>
+    <p class="small muted">${esc(t(sync.householdId ? 'settings.dataHelpShared' : 'settings.dataHelp'))}</p>
     <div class="btn-grid">
       <button type="button" class="btn" data-act="export-csv">⬇️ ${esc(t('settings.exportCsv'))}</button>
       <label class="btn">⬆️ ${esc(t('settings.importCsv'))}<input type="file" id="import-csv" accept=".csv,text/csv,text/plain" hidden></label>
@@ -56,6 +60,7 @@ export function renderSettings(main) {
     <p class="small">${esc(t('settings.installHelp'))}</p>
   </section>`;
 
+  bindShare();
   $('#lang').onclick = async e => {
     const b = e.target.closest('[data-lang]');
     if (!b) return;
@@ -74,6 +79,7 @@ export function renderSettings(main) {
   });
   $('#import-json').onchange = e => importFile(e.target, async text => {
     JSON.parse(text);
+    if (sync.householdId) return toast(t('share.blocked'), { kind: 'warn' });
     if (!(await confirmSheet(t('settings.restoreConfirm'), { ok: t('settings.importJson') }))) return;
     await restoreJSON(text);
     document.documentElement.lang = state.settings.lang;
@@ -98,6 +104,7 @@ const actions = {
   'export-csv': () => shareOrDownload(`budget-${today()}.csv`, new Blob([toCSV()], { type: 'text/csv;charset=utf-8' })),
   'export-json': () => shareOrDownload(`budget-${today()}.json`, new Blob([toJSON()], { type: 'application/json' })),
   reset: async () => {
+    if (sync.householdId) return toast(t('share.blocked'), { kind: 'warn' });
     if (!(await confirmSheet(t('settings.resetConfirm'), { ok: t('settings.reset') }))) return;
     await replaceAll({ settings: { lang: state.settings.lang } });
     toast(t('settings.resetDone'));
@@ -142,7 +149,7 @@ function editCategory(cat) {
       };
       $('#cat-delete')?.addEventListener('click', async () => {
         const count = state.transactions.filter(tx => tx.categoryId === cat.id).length;
-        const fallback = categoryById(cat.kind === 'income' ? 'other_income' : 'other');
+        const fallback = fallbackCategory(cat.kind);
         close();
         const ok = await new Promise(r => setTimeout(() => confirmSheet(t('cat.deleteConfirm', {
           name: categoryName(cat), count, fallback: categoryName(fallback),

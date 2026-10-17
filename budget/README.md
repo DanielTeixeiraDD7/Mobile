@@ -23,6 +23,18 @@ L'app doit être servie en HTTPS. Elle est publiée avec GitHub Pages : https://
 
 Sur iPhone, l'app installée et Safari ne partagent pas leurs données : utilise toujours l'icône de l'écran d'accueil.
 
+## Budget partagé (optionnel)
+
+Sans connexion, l'app reste 100 % locale. Dans Réglages → « Budget partagé », deux personnes peuvent partager le même budget via Supabase (PostgreSQL) :
+
+1. Exécuter `supabase/schema.sql` une fois dans Supabase → SQL Editor.
+2. Mettre l'URL du projet et la clé `anon` dans `js/config.js` (la clé `service_role` ne doit jamais être dans le code).
+3. Dans Supabase → Authentication → Emails, ajouter `{{ .Token }}` aux modèles « Magic Link » et « Confirm signup » : l'app se connecte avec un code à 6 chiffres reçu par e-mail.
+4. La première personne crée le foyer et génère un code d'invitation (24 h, usage unique) ; la seconde le saisit.
+5. Une fois les deux comptes créés, désactiver les inscriptions : Authentication → Sign In / Providers → « Allow new users to sign up ».
+
+Fonctionnement : les données restent dans IndexedDB ; chaque modification est mise dans une file d'attente (`js/outbox.js`) puis envoyée à l'API REST de Supabase (`js/sync.js`), qui renvoie aussi les modifications de l'autre personne. Hors-ligne, la file attend le retour du réseau. La sécurité repose sur la Row Level Security : voir `supabase/schema.sql` et les tests `supabase/test/`.
+
 ## Publier une mise à jour
 
 Modifier `VERSION` dans `sw.js` (ex. `budget-v2`) à chaque publication. Le service worker re-télécharge alors tous les fichiers et l'app se recharge à l'ouverture suivante.
@@ -45,6 +57,12 @@ js/ui.js              toast, feuilles modales, gestes (glisser, appui long), fic
 js/chart.js           graphiques SVG (anneau, barres)
 js/csv.js             export / import CSV
 js/backup.js          sauvegarde / restauration JSON
+js/config.js          URL et clé publique Supabase
+js/auth.js            connexion par code e-mail, session
+js/api.js             appels REST Supabase
+js/outbox.js          file d’attente des modifications locales
+js/sync.js            synchronisation (envoi, réception, foyer, invitations)
+supabase/             schéma SQL et tests de sécurité
 js/views/             un fichier par écran (add, list, budget, stats, settings) + formulaire et sélecteur de mois
 ```
 

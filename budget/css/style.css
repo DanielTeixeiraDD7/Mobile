@@ -290,6 +290,32 @@ select {
 .cat-list span { flex: 1; }
 .cat-list .chev { flex: none; color: var(--muted); font-size: 1.3rem; }
 
+/* Partage */
+.center { text-align: center; }
+.share .row input { flex: 1; min-width: 0; }
+.code-input {
+  min-height: 50px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2);
+  padding: 0 14px; font-family: var(--mono); font-size: 1.2rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text);
+}
+.sync-status { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--muted); }
+.sync-status i { width: 8px; height: 8px; border-radius: 50%; background: var(--income); flex: none; }
+.sync-status.syncing i { background: var(--warn); animation: pulse 1s infinite alternate; }
+.sync-status.offline i { background: var(--muted); }
+.sync-status.error i { background: var(--over); }
+.sync-status.error { color: var(--over); }
+@keyframes pulse { to { opacity: 0.3; } }
+.members { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.members li { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.avatar {
+  width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-style: normal;
+  background: color-mix(in srgb, var(--accent) 20%, var(--surface)); color: var(--accent); font-weight: 800;
+}
+.invite { display: flex; flex-direction: column; gap: 8px; align-items: stretch; text-align: center; }
+.invite-code {
+  font-family: var(--mono); font-size: 1.8rem; font-weight: 800; letter-spacing: 0.2em; padding: 12px;
+  border: 2px dashed var(--accent); border-radius: 14px; user-select: all; -webkit-user-select: all; overflow-wrap: anywhere;
+}
+
 /* Formulaires */
 .form { display: flex; flex-direction: column; gap: 14px; }
 .form label { display: flex; flex-direction: column; gap: 6px; font-size: 0.85rem; color: var(--muted); font-weight: 600; }

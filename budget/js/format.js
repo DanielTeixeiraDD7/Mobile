@@ -54,4 +54,13 @@ export const monthLabel = (ym, short = false) =>
 export const dateLabel = iso => parseIso(iso).toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long' });
 export const shortDate = iso => parseIso(iso).toLocaleDateString(locale(), { day: 'numeric', month: 'short' });
 
+export function ago(iso) {
+  const diff = (Date.parse(iso) - Date.now()) / 1000;
+  const rtf = new Intl.RelativeTimeFormat(locale(), { numeric: 'auto' });
+  if (Math.abs(diff) < 60) return rtf.format(0, 'second');
+  if (Math.abs(diff) < 3600) return rtf.format(Math.round(diff / 60), 'minute');
+  if (Math.abs(diff) < 86400) return rtf.format(Math.round(diff / 3600), 'hour');
+  return rtf.format(Math.round(diff / 86400), 'day');
+}
+
 export const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

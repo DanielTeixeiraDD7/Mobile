@@ -1,4 +1,4 @@
-import { state, saveCategory, addTransactions, uid, categoriesOf, PALETTE } from './store.js';
+import { state, saveCategory, addTransactions, uid, categoriesOf, fallbackCategory, PALETTE } from './store.js';
 import { t, categoryName, allTranslations } from './i18n.js';
 
 const BOM = '﻿';
@@ -115,7 +115,7 @@ export async function importCSV(text) {
 const key = tx => [tx.date, tx.type, tx.amount, tx.categoryId, tx.note].join('|');
 
 async function findOrCreateCategory(name, kind) {
-  if (!name) return kind === 'income' ? 'other_income' : 'other';
+  if (!name) return fallbackCategory(kind).id;
   const found = categoriesOf(kind).find(c => categoryName(c).toLowerCase() === name.toLowerCase());
   if (found) return found.id;
   const cat = await saveCategory({ name, kind, color: PALETTE[state.categories.length % PALETTE.length] });

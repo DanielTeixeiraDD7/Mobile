@@ -1,10 +1,11 @@
-const VERSION = 'budget-v1';
+const VERSION = 'budget-v2';
 const ASSETS = [
   './', 'index.html', 'manifest.webmanifest', 'css/style.css',
   'js/main.js', 'js/db.js', 'js/store.js', 'js/format.js', 'js/i18n.js', 'js/calc.js',
   'js/ui.js', 'js/chart.js', 'js/csv.js', 'js/backup.js', 'js/router.js',
   'js/views/add.js', 'js/views/list.js', 'js/views/budget.js', 'js/views/stats.js',
-  'js/views/settings.js', 'js/views/txform.js', 'js/views/month.js',
+  'js/views/settings.js', 'js/views/txform.js', 'js/views/month.js', 'js/views/share.js',
+  'js/config.js', 'js/auth.js', 'js/api.js', 'js/outbox.js', 'js/sync.js',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
 ];
 

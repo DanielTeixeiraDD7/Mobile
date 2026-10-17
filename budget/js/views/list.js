@@ -4,6 +4,8 @@ import { money, signedMoney, dateLabel, today, esc } from '../format.js';
 import { txOfMonth, totals } from '../calc.js';
 import { gestures, $$ } from '../ui.js';
 import { render } from '../router.js';
+import { sync, memberName } from '../sync.js';
+import { currentUser } from '../auth.js';
 import { month, monthNav, bindMonthNav } from './month.js';
 import { editTransaction, transactionActions, removeWithUndo, findTx } from './txform.js';
 
@@ -40,13 +42,18 @@ export function renderList(main) {
   });
 }
 
+function subtitle(tx) {
+  const author = sync.members.length > 1 && tx.createdBy && tx.createdBy !== currentUser()?.id && memberName(tx.createdBy);
+  return [tx.note, author && t('share.by', { name: author })].filter(Boolean).join(' · ');
+}
+
 function row(tx) {
   const cat = categoryById(tx.categoryId);
   return `<li class="tx" data-id="${tx.id}">
     <div class="row-bg">🗑️ ${esc(t('delete'))}</div>
     <div class="row-content">
       <i class="dot" style="background:${cat.color}"></i>
-      <div class="tx-text"><b>${esc(categoryName(cat))}</b>${tx.note ? `<small>${esc(tx.note)}</small>` : ''}</div>
+      <div class="tx-text"><b>${esc(categoryName(cat))}</b>${subtitle(tx) ? `<small>${esc(subtitle(tx))}</small>` : ''}</div>
       <span class="tx-amount ${tx.type}">${signedMoney(tx.amount, tx.type)}</span>
     </div>
   </li>`;

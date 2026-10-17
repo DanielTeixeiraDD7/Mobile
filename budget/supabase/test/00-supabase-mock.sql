@@ -3,7 +3,10 @@ do $$ begin create role authenticated nologin; exception when duplicate_object t
 create schema auth;
 create table auth.users (id uuid primary key);
 create function auth.uid() returns uuid language sql stable
-  as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+  as $$ select coalesce(nullif(current_setting('request.jwt.claim.sub', true), ''),
+                        (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub'))::uuid $$;
+do $$ begin create role authenticator login noinherit; exception when duplicate_object then null; end $$;
+grant anon, authenticated to authenticator;
 grant usage on schema public, auth to anon, authenticated;
 grant execute on function auth.uid() to anon, authenticated;
 -- comme Supabase : droits par défaut larges, la sécurité vient de la RLS

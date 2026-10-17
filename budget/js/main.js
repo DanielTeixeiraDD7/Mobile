@@ -1,4 +1,5 @@
 import { init, state } from './store.js';
+import { initSync, onSyncChange } from './sync.js';
 import { t } from './i18n.js';
 import { register, go, render, currentView } from './router.js';
 import { renderAdd, handleKey } from './views/add.js';
@@ -39,9 +40,14 @@ async function start() {
     document.getElementById('main').innerHTML = '<p class="empty">IndexedDB indisponible / indisponível.</p>';
     return;
   }
+  await initSync().catch(() => {});
   document.documentElement.lang = state.settings.lang;
   renderTabbar();
   render();
+
+  const typing = () => document.activeElement?.matches('input, textarea, select') || !document.getElementById('sheet').hidden;
+  document.addEventListener('remotechange', () => !typing() && render());
+  onSyncChange(() => currentView() === 'settings' && !typing() && render());
 
   document.querySelector('.tabbar').onclick = e => {
     const b = e.target.closest('[data-tab]');
