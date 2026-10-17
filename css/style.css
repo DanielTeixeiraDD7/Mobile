@@ -113,7 +113,7 @@ label.btn { color: var(--text); font-size: 1rem; }
 
 /* Progression */
 .bignum { font-size: 2.6rem; font-weight: 800; letter-spacing: -0.03em; margin: 0; line-height: 1.1; }
-.bignum span, .midnum span { font-size: 1rem; color: var(--muted); font-weight: 500; }
+.bignum span:last-child, .midnum span { font-size: 1rem; color: var(--muted); font-weight: 500; }
 .midnum { font-size: 1.3rem; font-weight: 700; margin: 0; }
 .bar { height: 12px; background: var(--card2); border-radius: 99px; overflow: hidden; margin: 12px 0 8px; }
 .bar.thin { height: 6px; margin: 10px 0 0; }
@@ -141,6 +141,21 @@ label.btn { color: var(--text); font-size: 1rem; }
   position: relative; overflow: hidden;
 }
 .glass.full { background: linear-gradient(to top, #4aa3ff 80%, transparent 80%); }
+
+/* Calories brûlées */
+.burned { background: linear-gradient(160deg, #2b1d17, var(--card)); }
+.burned .kv { margin-top: 6px; }
+.flame { font-size: 2.4rem; }
+
+/* Pas */
+.steps-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; height: 64px; margin-top: 14px; }
+.sw { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; min-width: 0; }
+.sw i { display: block; width: 100%; max-width: 22px; min-height: 3px; border-radius: 4px; background: var(--card2); }
+.sw.ok i { background: var(--good); }
+.sw:last-child i { background: var(--accent); }
+.sw small { font-size: 0.65rem; color: var(--muted); }
+.pedo-on { color: var(--good); margin: 8px 0 0; }
+details summary { cursor: pointer; }
 
 /* Habitudes */
 .checklist { list-style: none; margin: 0; padding: 0; }

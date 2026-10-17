@@ -143,6 +143,19 @@ function sessionKcal(steps, kg) {
   return Math.round(steps.reduce((t, s) => t + (s.met || 1.5) * kg * (s.dur / 3600), 0));
 }
 
+// Dépense nette de la marche ≈ 0,4 kcal par kg et par 1000 pas.
+const stepKcal = steps => Math.round(Math.max(0, steps) * currentWeight() * 0.0004);
+
+// Calories brûlées un jour donné : séances + pas (sans compter deux fois les pas faits pendant une séance).
+function burnedOn(date) {
+  const ses = state.sessions.filter(s => s.date === date);
+  const sesKcal = ses.reduce((t, s) => t + s.kcal, 0);
+  const sesSteps = ses.reduce((t, s) => t + (s.steps || 0), 0);
+  const steps = state.days[date] ? state.days[date].steps : 0;
+  const walk = stepKcal(steps - sesSteps);
+  return { sessions: sesKcal, steps: walk, total: sesKcal + walk };
+}
+
 function streak() {
   // jours consécutifs avec une séance (aujourd'hui ou hier comme point de départ)
   const dates = new Set(state.sessions.map(s => s.date));
@@ -162,6 +175,78 @@ function weekStart(d = new Date()) {
 function weekSessions() {
   const start = weekStart();
   return state.sessions.filter(s => s.date >= start);
+}
+
+function weekBurned() {
+  let total = 0;
+  const d = parseDate(weekStart());
+  for (let i = 0; i < 7; i++) { total += burnedOn(isoDate(d)).total; d.setDate(d.getDate() + 1); }
+  return total;
+}
+
+/* ================= Podomètre (accéléromètre) ================= */
+// Ne fonctionne que si l'app est ouverte, écran allumé (limite des apps web sur iPhone).
+const pedo = { on: false, smooth: 9.81, avg: 9.81, above: false, last: 0, session: 0, gotData: false, wakeLock: null };
+
+async function startPedometer() {
+  if (pedo.on) return true;
+  if (typeof DeviceMotionEvent === 'undefined') { toast('Capteur de mouvement indisponible sur cet appareil'); return false; }
+  if (typeof DeviceMotionEvent.requestPermission === 'function') {
+    try {
+      if (await DeviceMotionEvent.requestPermission() !== 'granted') { toast('Autorise l’accès « Mouvement » pour compter tes pas'); return false; }
+    } catch (e) { toast('Accès aux mouvements refusé'); return false; }
+  }
+  Object.assign(pedo, { on: true, smooth: 9.81, avg: 9.81, above: false, last: 0, session: 0, gotData: false });
+  window.addEventListener('devicemotion', onMotion);
+  try { if ('wakeLock' in navigator) pedo.wakeLock = await navigator.wakeLock.request('screen'); } catch (e) { /* ignoré */ }
+  setTimeout(() => { if (pedo.on && !pedo.gotData) { stopPedometer(); toast('Aucun signal du capteur de mouvement'); } }, 4000);
+  refreshSteps();
+  return true;
+}
+
+function stopPedometer() {
+  if (!pedo.on) return;
+  pedo.on = false;
+  window.removeEventListener('devicemotion', onMotion);
+  if (pedo.wakeLock) { pedo.wakeLock.release().catch(() => {}); pedo.wakeLock = null; }
+  save();
+  refreshSteps();
+}
+
+function onMotion(e) {
+  const a = e.accelerationIncludingGravity;
+  if (!a || a.x == null) return;
+  pedo.gotData = true;
+  const m = Math.hypot(a.x, a.y, a.z);
+  pedo.smooth = pedo.smooth * 0.7 + m * 0.3;   // lissage du signal
+  pedo.avg = pedo.avg * 0.98 + m * 0.02;       // niveau de base (gravité)
+  const now = performance.now();
+  if (!pedo.above && pedo.smooth > pedo.avg + 1.2) {
+    pedo.above = true;
+    if (now - pedo.last > 300) { pedo.last = now; countStep(); }
+  } else if (pedo.above && pedo.smooth < pedo.avg) {
+    pedo.above = false;
+  }
+}
+
+function countStep() {
+  const d = day();
+  d.steps = (d.steps || 0) + 1;
+  pedo.session++;
+  if (pedo.session % 10 === 0) save();
+  refreshSteps();
+}
+
+// Met à jour l'affichage des pas sans tout redessiner.
+function refreshSteps() {
+  const d = day();
+  $$('[data-live="steps"]').forEach(el => (el.textContent = d.steps.toLocaleString('fr-FR')));
+  $$('[data-live="steps-kcal"]').forEach(el => (el.textContent = burnedOn(today()).steps));
+  $$('[data-live="burned"]').forEach(el => (el.textContent = burnedOn(today()).total));
+  $$('[data-live="pedo-btn"]').forEach(el => { el.innerHTML = pedo.on ? '⏹ Arrêter le comptage' : '▶ Compter mes pas'; el.classList.toggle('primary', !pedo.on); });
+  $$('[data-live="pedo-state"]').forEach(el => (el.hidden = !pedo.on));
+  const bar = $('[data-live="steps-bar"]');
+  if (bar) bar.style.width = `${Math.min(100, (d.steps / 8000) * 100)}%`;
 }
 
 /* ================= Construction des séances ================= */
@@ -309,6 +394,7 @@ function viewHome() {
   const lastW = sortedWeights().slice(-1)[0];
   const weighedToday = lastW && lastW.date === today();
   const tip = TIPS[(new Date().getDate()) % TIPS.length];
+  const burned = burnedOn(today());
 
   return `
   <header class="top">
@@ -354,8 +440,23 @@ function viewHome() {
 
   <section class="stats">
     <div class="stat"><b>${ws.length}</b><span>séances<br>cette semaine</span></div>
-    <div class="stat"><b>${ws.reduce((t, s) => t + s.kcal, 0)}</b><span>kcal brûlées<br>cette semaine</span></div>
+    <div class="stat"><b>${weekBurned()}</b><span>kcal brûlées<br>cette semaine</span></div>
     <div class="stat"><b>${state.sessions.length}</b><span>séances<br>au total</span></div>
+  </section>
+
+  <section class="card burned">
+    <div class="row between">
+      <div>
+        <p class="muted small">Calories brûlées aujourd’hui</p>
+        <p class="bignum"><span data-live="burned">${burned.total}</span> <span>kcal</span></p>
+      </div>
+      <span class="flame">🔥</span>
+    </div>
+    <ul class="kv wide">
+      <li><span>🏋️ Séances</span><b>${burned.sessions} kcal</b></li>
+      <li><span>👟 Marche (pas)</span><b><span data-live="steps-kcal">${burned.steps}</span> kcal</b></li>
+    </ul>
+    <p class="muted small mt">En plus de ta dépense de base (~${n.tdee} kcal/jour). Estimation selon ton poids.</p>
   </section>
 
   <section class="card">
@@ -367,11 +468,19 @@ function viewHome() {
 
   <section class="card">
     <div class="row between"><h3>👟 Pas du jour</h3><span class="muted small">objectif 8 000</span></div>
-    <div class="row gap">
-      <input id="steps" type="number" inputmode="numeric" min="0" placeholder="0" value="${d.steps || ''}">
-      <button class="btn" data-action="save-steps">OK</button>
-    </div>
-    <div class="bar thin"><div style="width:${Math.min(100, (d.steps / 8000) * 100)}%"></div></div>
+    <p class="bignum"><span data-live="steps">${d.steps.toLocaleString('fr-FR')}</span> <span>pas</span></p>
+    <div class="bar thin"><div data-live="steps-bar" style="width:${Math.min(100, (d.steps / 8000) * 100)}%"></div></div>
+    <div class="steps-week">${stepsWeek()}</div>
+    <button class="btn ${pedo.on ? '' : 'primary'} full mt" data-action="pedometer" data-live="pedo-btn">${pedo.on ? '⏹ Arrêter le comptage' : '▶ Compter mes pas'}</button>
+    <p class="small pedo-on" data-live="pedo-state" ${pedo.on ? '' : 'hidden'}>● Comptage en cours : garde l’app ouverte, téléphone en poche ou en main.</p>
+    <details class="mt">
+      <summary class="muted small">Saisir le total de l’app Santé</summary>
+      <div class="row gap mt">
+        <input id="steps" type="number" inputmode="numeric" min="0" placeholder="Ex : 7 500" value="">
+        <button class="btn" data-action="save-steps">OK</button>
+      </div>
+      <p class="muted small mt">iPhone : app Santé → Activité → Pas. Le total saisi remplace celui du jour.</p>
+    </details>
   </section>
 
   <section class="card">
@@ -382,6 +491,16 @@ function viewHome() {
   </section>
 
   <section class="card tip"><p>💡 ${tip}</p></section>`;
+}
+
+// Mini-graphique des pas sur 7 jours.
+function stepsWeek() {
+  const days = [];
+  for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); days.push(d); }
+  const vals = days.map(d => (state.days[isoDate(d)] || {}).steps || 0);
+  const max = Math.max(8000, ...vals);
+  return days.map((d, i) => `<div class="sw ${vals[i] >= 8000 ? 'ok' : ''}" title="${vals[i]} pas">
+    <i style="height:${Math.round((vals[i] / max) * 100)}%"></i><small>${DAY_NAMES[d.getDay()][0]}</small></div>`).join('');
 }
 
 /* ================= Séances ================= */
@@ -590,7 +709,7 @@ function viewFood() {
       <ul class="kv">
         <li><span>Objectif</span><b>${n.target}</b></li>
         <li><span>Mangé</span><b>${eaten}</b></li>
-        <li><span>Sport</span><b class="good">+${burned}</b></li>
+        <li><span>Séances</span><b class="good">+${burned}</b></li>
       </ul>
     </div>
   </section>
@@ -733,6 +852,10 @@ function startWorkout(type) {
   player.i = 0;
   player.elapsed = 0;
   player.left = player.steps[0].dur;
+  player.stepsStart = day().steps;
+  // Pendant la marche active, on compte les pas automatiquement.
+  player.pedoAuto = false;
+  if (type === 'marche' && !pedo.on) startPedometer().then(ok => (player.pedoAuto = ok));
   $('#player').hidden = false;
   document.body.classList.add('noscroll');
   beep(660, 1); // débloque l'audio sur iOS (geste utilisateur)
@@ -801,6 +924,7 @@ function closePlayer() {
   pause();
   try { speechSynthesis.cancel(); } catch (e) { /* ignoré */ }
   if (player.wakeLock) { player.wakeLock.release().catch(() => {}); player.wakeLock = null; }
+  if (player.pedoAuto) { stopPedometer(); player.pedoAuto = false; }
   $('#player').hidden = true;
   document.body.classList.remove('noscroll');
 }
@@ -809,7 +933,8 @@ function finishWorkout() {
   pause();
   const done = player.steps.map(s => ({ met: s.met, dur: Math.min(s.dur, s.spent || 0) }));
   const kcal = sessionKcal(done, currentWeight());
-  const session = { date: today(), type: player.type, level: state.profile.level, duration: Math.round(player.elapsed), kcal, feel: 0 };
+  const steps = Math.max(0, day().steps - player.stepsStart);
+  const session = { date: today(), type: player.type, level: state.profile.level, duration: Math.round(player.elapsed), kcal, feel: 0, steps };
   state.sessions.push(session);
   save();
   say('Séance terminée. Bravo !');
@@ -821,7 +946,7 @@ function finishWorkout() {
       <div class="stats">
         <div class="stat"><b>${fmtMin(session.duration)}</b><span>durée</span></div>
         <div class="stat"><b>${kcal}</b><span>kcal</span></div>
-        <div class="stat"><b>${streak()}</b><span>jours de suite</span></div>
+        <div class="stat"><b>${steps ? steps.toLocaleString('fr-FR') : streak()}</b><span>${steps ? 'pas' : 'jours de suite'}</span></div>
       </div>
       <h3>Comment c’était ?</h3>
       <div class="feel">
@@ -957,7 +1082,12 @@ document.addEventListener('click', e => {
       ask('Ton poids ce matin (kg) :', { input: String(currentWeight()), buttons: [{ label: 'Annuler', value: null }, { label: 'Enregistrer', value: 'input', cls: 'primary' }] })
         .then(v => { if (v) { addWeight(Number(String(v).replace(',', '.'))); render(); } });
       break;
+    case 'pedometer':
+      if (pedo.on) { stopPedometer(); toast(`${pedo.session.toLocaleString('fr-FR')} pas comptés ✅`); }
+      else startPedometer().then(ok => ok && toast('Comptage lancé 👟'));
+      break;
     case 'save-steps': {
+      if ($('#steps').value === '') return toast('Entre ton nombre de pas');
       const v = Number($('#steps').value) || 0;
       day().steps = Math.max(0, Math.min(100000, v)); save(); render();
       if (v >= 8000) celebrate('👟 Objectif de pas atteint !'); else toast('Pas enregistrés');
@@ -1040,6 +1170,7 @@ document.addEventListener('submit', e => {
 // Reprise propre après mise en veille / changement d'app
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
+    if (pedo.on && 'wakeLock' in navigator) navigator.wakeLock.request('screen').then(l => (pedo.wakeLock = l)).catch(() => {});
     if (!$('#player').hidden) lockScreen();
     else render(); // la date a pu changer
   }
