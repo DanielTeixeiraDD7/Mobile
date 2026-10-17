@@ -55,6 +55,31 @@ function toast(msg) {
   toast.timer = setTimeout(() => t.classList.remove('show'), 2400);
 }
 
+// Fenêtre de dialogue intégrée (remplace confirm/prompt, bloqués dans certains contextes).
+// buttons : [{ label, value, cls }] ; renvoie la value du bouton choisi (ou le texte saisi si value === 'input').
+function ask(message, { buttons = [{ label: 'Annuler', value: false }, { label: 'OK', value: true, cls: 'primary' }], input = null, textarea = false } = {}) {
+  return new Promise(resolve => {
+    const m = $('#modal');
+    const field = input === null ? '' : textarea
+      ? `<textarea id="modal-input" rows="6" placeholder="${esc(input)}"></textarea>`
+      : `<input id="modal-input" type="number" inputmode="decimal" step="0.1" value="${esc(input)}">`;
+    m.innerHTML = `<div class="sheet" role="dialog" aria-modal="true">
+      <p>${esc(message)}</p>${field}
+      <div class="sheet-btns">${buttons.map((b, i) => `<button class="btn ${b.cls || ''}" data-m="${i}">${b.label}</button>`).join('')}</div></div>`;
+    m.hidden = false;
+    const inp = $('#modal-input');
+    if (inp) inp.focus();
+    m.onclick = e => {
+      const b = e.target.closest('[data-m]');
+      if (!b) return;
+      const val = buttons[Number(b.dataset.m)].value;
+      m.hidden = true;
+      m.onclick = null;
+      resolve(val === 'input' ? inp.value : val);
+    };
+  });
+}
+
 /* ================= Calculs ================= */
 function sortedWeights() { return [...state.weights].sort((a, b) => a.date.localeCompare(b.date)); }
 
@@ -653,6 +678,8 @@ function viewProfile() {
     <div class="row gap wrap">
       <button class="btn" data-action="export">⬇️ Exporter</button>
       <label class="btn">⬆️ Importer<input type="file" accept="application/json" id="import" hidden></label>
+      <button class="btn" data-action="copy">📋 Copier</button>
+      <button class="btn" data-action="paste">📥 Coller</button>
       <button class="btn danger" data-action="reset">🗑️ Tout effacer</button>
     </div>
   </section>
@@ -895,8 +922,15 @@ document.addEventListener('click', e => {
     if (ds.pl === 'next') return next();
     if (ds.pl === 'prev') return prev();
     if (ds.pl === 'close') {
-      if (player.elapsed > 120 && confirm('Arrêter la séance ? Tu peux enregistrer ce qui a été fait.')) return finishWorkout();
-      return closePlayer();
+      if (player.elapsed < 60) return closePlayer();
+      const wasRunning = player.running;
+      pause();
+      ask('Arrêter la séance ?', { buttons: [
+        { label: 'Reprendre', value: 'resume', cls: 'primary' },
+        { label: 'Terminer et enregistrer', value: 'save' },
+        { label: 'Quitter sans enregistrer', value: 'quit', cls: 'danger' },
+      ] }).then(v => v === 'save' ? finishWorkout() : v === 'quit' ? closePlayer() : wasRunning && resume());
+      return;
     }
   }
   if (ds.feel) return rateSession(Number(ds.feel));
@@ -910,18 +944,19 @@ document.addEventListener('click', e => {
   if (ds.level) { state.profile.level = Number(ds.level); save(); render(); return toast(`Niveau ${ds.level} : ${LEVELS[ds.level].name}`); }
   if (ds.delWeight) {
     if (state.weights.length <= 1) return toast('Garde au moins une pesée');
-    if (confirm('Supprimer cette pesée ?')) { state.weights = state.weights.filter(w => w.date !== ds.delWeight); save(); render(); }
+    const date = ds.delWeight;
+    ask(`Supprimer la pesée du ${fmtDate(date)} ?`, { buttons: [{ label: 'Annuler', value: false }, { label: 'Supprimer', value: true, cls: 'danger' }] })
+      .then(yes => { if (yes) { state.weights = state.weights.filter(w => w.date !== date); save(); render(); } });
     return;
   }
   if (ds.delFood) { day().food.splice(Number(ds.delFood), 1); save(); return render(); }
   if (ds.preset) { const f = FOOD_PRESETS[Number(ds.preset)]; day().food.push({ ...f }); save(); render(); return toast(`+${f.kcal} kcal`); }
 
   switch (ds.action) {
-    case 'quick-weigh': {
-      const v = prompt('Ton poids ce matin (kg) :', fmtKg(currentWeight()).replace(',', '.'));
-      if (v) { addWeight(Number(v.replace(',', '.'))); render(); }
+    case 'quick-weigh':
+      ask('Ton poids ce matin (kg) :', { input: String(currentWeight()), buttons: [{ label: 'Annuler', value: null }, { label: 'Enregistrer', value: 'input', cls: 'primary' }] })
+        .then(v => { if (v) { addWeight(Number(String(v).replace(',', '.'))); render(); } });
       break;
-    }
     case 'save-steps': {
       const v = Number($('#steps').value) || 0;
       day().steps = Math.max(0, Math.min(100000, v)); save(); render();
@@ -937,8 +972,18 @@ document.addEventListener('click', e => {
       setTimeout(() => URL.revokeObjectURL(a.href), 1000);
       break;
     }
+    case 'copy':
+      navigator.clipboard.writeText(JSON.stringify(state))
+        .then(() => toast('Données copiées ✅ Colle-les dans tes notes pour les garder'))
+        .catch(() => toast('Copie impossible sur cet appareil'));
+      break;
+    case 'paste':
+      ask('Colle ici tes données copiées :', { input: '{"profile":…}', textarea: true, buttons: [{ label: 'Annuler', value: null }, { label: 'Importer', value: 'input', cls: 'primary' }] })
+        .then(v => { if (v) importData(v); });
+      break;
     case 'reset':
-      if (confirm('Effacer toutes tes données ? Action irréversible.')) { state = defaultState(); save(); go('home'); }
+      ask('Effacer toutes tes données ? Action irréversible.', { buttons: [{ label: 'Annuler', value: false }, { label: 'Tout effacer', value: true, cls: 'danger' }] })
+        .then(yes => { if (yes) { state = defaultState(); save(); go('home'); } });
       break;
     case 'install':
       if (deferredInstall) { deferredInstall.prompt(); deferredInstall = null; }
@@ -958,17 +1003,19 @@ document.addEventListener('change', e => {
     save();
   } else if (t.id === 'import' && t.files[0]) {
     const r = new FileReader();
-    r.onload = () => {
-      try {
-        const data = JSON.parse(r.result);
-        if (!data.profile || !Array.isArray(data.weights)) throw new Error('format');
-        state = Object.assign(defaultState(), data);
-        save(); go('home'); toast('Données importées ✅');
-      } catch (err) { toast('Fichier invalide'); }
-    };
+    r.onload = () => importData(r.result);
     r.readAsText(t.files[0]);
   }
 });
+
+function importData(text) {
+  try {
+    const data = JSON.parse(text);
+    if (!data.profile || !Array.isArray(data.weights)) throw new Error('format');
+    state = Object.assign(defaultState(), data);
+    save(); go('home'); toast('Données importées ✅');
+  } catch (err) { toast('Données invalides'); }
+}
 
 document.addEventListener('submit', e => {
   const f = e.target;
