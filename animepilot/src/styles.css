@@ -123,3 +123,63 @@ textarea.input { padding: 10px 14px; min-height: 88px; resize: vertical; }
 .offline-pill { font-size: 12px; font-weight: 700; color: var(--warn); border: 1px solid rgba(251,191,36,.4); border-radius: 999px; padding: 2px 10px; }
 
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* Affiches */
+.poster { position: relative; flex: none; overflow: hidden; border-radius: 10px; background: var(--card-2); aspect-ratio: 2 / 3; }
+.poster img { width: 100%; height: 100%; object-fit: cover; }
+.poster.sm { width: 52px; }
+.poster.md { width: 104px; }
+.poster.lg { width: 120px; border-radius: 14px; }
+.poster.placeholder { display: grid; place-items: center; }
+.poster.placeholder span { font-size: 22px; font-weight: 800; color: rgba(255,255,255,.85); text-shadow: 0 1px 4px rgba(0,0,0,.4); }
+.poster.lg.placeholder span { font-size: 40px; }
+
+/* Listes */
+.entries, .results, .history, .hscroll { list-style: none; margin: 0; padding: 0; }
+.entry, .result { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.entry-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; background: none; border: 0; padding: 0; text-align: left; }
+.entry-main > .grow { display: grid; gap: 3px; }
+.entry-title { font-weight: 650; font-size: 15px; line-height: 1.25; }
+.bar { display: block; height: 4px; background: var(--card-2); border-radius: 4px; overflow: hidden; margin-top: 4px; }
+.bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 4px; }
+.bar.big { height: 6px; margin-top: 12px; }
+.plus {
+  flex: none; width: 44px; height: 44px; border-radius: 14px; border: 1px solid var(--line);
+  background: var(--accent-soft); color: #ddd6fe; display: grid; place-items: center;
+}
+.plus svg { width: 22px; height: 22px; }
+.plus:active { transform: scale(.94); }
+.tag { display: inline-block; font-size: 12px; font-weight: 600; color: #ddd6fe; background: var(--accent-soft); border-radius: 999px; padding: 2px 10px; width: fit-content; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 0; }
+.accent { color: #c4b5fd; }
+
+/* Fiche */
+.hero { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 14px; }
+.hero-title { font-size: 22px; line-height: 1.2; margin: 0 0 4px; letter-spacing: -.01em; }
+.hero p { margin: 2px 0; }
+.status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tracking .chips { margin-top: -4px; }
+.progress-ctl { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+.progress-ctl .value { flex: 1; background: var(--bg-2); border: 1px solid var(--line); border-radius: 14px; min-height: 56px; font-size: 15px; }
+.progress-ctl .value strong { font-size: 24px; }
+.round { width: 56px; height: 56px; border-radius: 50%; border: 1px solid var(--line); background: var(--card-2); display: grid; place-items: center; }
+.round.primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); border-color: transparent; color: #fff; }
+.round:disabled { opacity: .35; }
+.round svg { width: 26px; height: 26px; }
+.desc { white-space: pre-line; color: var(--muted); margin: 0; font-size: 15px; }
+.clamp4 { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.link-btn { background: none; border: 0; color: #c4b5fd; padding: 8px 0; font-weight: 600; }
+.hscroll { display: flex; gap: 12px; overflow-x: auto; margin: 0 -16px; padding: 0 16px 6px; scrollbar-width: none; }
+.hscroll::-webkit-scrollbar { display: none; }
+.mini { width: 104px; background: none; border: 0; padding: 0; text-align: left; display: grid; gap: 6px; color: var(--text); }
+.history li { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.history li:last-child { border-bottom: 0; }
+.history li.undone .grow { text-decoration: line-through; opacity: .5; }
+.history.card { padding-top: 4px; padding-bottom: 4px; }
+
+/* Feuille modale */
+.sheet { border: 0; padding: 0; margin: auto auto 0; width: 100%; max-width: 560px; background: transparent; color: var(--text); }
+.sheet::backdrop { background: rgba(5, 4, 12, .66); }
+.sheet-body { background: var(--bg-2); border: 1px solid var(--line); border-bottom: 0; border-radius: 22px 22px 0 0; padding: 12px 16px calc(20px + var(--safe-b)); animation: up .2s ease-out; }
+.sheet-body h2 { margin: 0; font-size: 18px; }
+.sheet-body > header { margin-bottom: 8px; }
