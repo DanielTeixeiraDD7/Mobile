@@ -1,5 +1,5 @@
 // Service worker : fonctionnement hors-ligne (cache de l'application).
-const CACHE = 'fitmaison-v2';
+const CACHE = 'fitmaison-v3';
 const ASSETS = [
   './', 'index.html', 'css/style.css', 'js/data.js', 'js/app.js', 'manifest.webmanifest',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
@@ -21,7 +21,7 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET' || new URL(e.request.url).origin !== location.origin) return;
   e.respondWith(
-    fetch(e.request)
+    fetch(e.request, { cache: 'no-cache' }) // ignore le cache HTTP de 10 min de GitHub Pages
       .then(res => {
         const copy = res.clone();
         caches.open(CACHE).then(c => c.put(e.request, copy));

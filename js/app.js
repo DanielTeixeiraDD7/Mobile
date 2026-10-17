@@ -1181,7 +1181,14 @@ window.addEventListener('resize', () => { if (currentTab === 'weight') drawChart
 let deferredInstall = null;
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; });
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+    .then(reg => reg.update()).catch(() => {}));
+  // Nouvelle version installée : on recharge une fois (sauf pendant une séance).
+  let hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadController && $('#player').hidden && !pedo.on) location.reload();
+    hadController = true;
+  });
 }
 if ('speechSynthesis' in window) speechSynthesis.getVoices();
 
