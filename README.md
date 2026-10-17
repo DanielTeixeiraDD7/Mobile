@@ -1,3 +1,5 @@
+> Ce dépôt contient deux apps : **FitMaison** (racine, ci-dessous) et **[Budget](budget/README.md)** (dossier `budget/`, https://danielteixeiradd7.github.io/Mobile/budget/).
+
 # FitMaison 🔥 – Perte de poids au poids du corps
 
 Application mobile (PWA) pour perdre du poids avec des séances **sans matériel et sans saut**, à la maison ou au jardin. Fonctionne hors-ligne, s’installe sur l’écran d’accueil (iPhone et Android). Les données restent sur le téléphone.
