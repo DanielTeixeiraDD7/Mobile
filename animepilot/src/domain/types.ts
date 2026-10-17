@@ -63,6 +63,8 @@ export interface HistoryEvent {
   before: Partial<Pick<LibraryEntry, 'progress' | 'status' | 'score' | 'startedAt' | 'completedAt' | 'repeatCount'>>;
   after: Partial<Pick<LibraryEntry, 'progress' | 'status' | 'score' | 'startedAt' | 'completedAt' | 'repeatCount'>>;
   undone: boolean;
+  /** Copie complète du titre pour annuler une suppression. */
+  snapshot?: LibraryEntry;
 }
 
 export interface Settings {
