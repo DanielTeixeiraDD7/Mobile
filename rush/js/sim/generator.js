@@ -120,9 +120,11 @@ export function createGenerator({ zone, rng }) {
           const m = KINDS[e.kind].moving;
           return { ...e, z: m ? (z * (speed + m)) / speed : z };
         };
+        const entities = [...seg.entities.map(place), ...rings.map(place)];
+        if (pattern.setPiece && entities[0]) entities[0].piece = pattern.id; // pour le décor spécial (arche, grand saut)
         return {
           id: pattern.id,
-          entities: [...seg.entities.map(place), ...rings.map(place)],
+          entities,
           end: z0 + lead + seg.length,
           plan: seg.rows.map((row, i) => ({ z: row.z + z0 + lead, gapEnd: row.gapEnd.map(g => (g == null ? null : g + z0 + lead)), ...seg.path[i] })),
         };

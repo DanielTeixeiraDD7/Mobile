@@ -30,7 +30,7 @@ export function createRun({ zone, character, seed, mode = 'zone' }) {
   const state = {
     zone, character, seed, mode, player, power, stats, events,
     entities: [], status: 'playing', speed: speedAt(0) * character.speedMul,
-    boss: null, victory: false, spawnZ: 40,
+    boss: null, victory: false, spawnZ: 40, groundShadow: 0, overGap: false,
     plan: [],            // chemin sûr calculé par le validateur (utilisé par les tests automatiques)
   };
   let nextId = 1;
@@ -64,6 +64,7 @@ export function createRun({ zone, character, seed, mode = 'zone' }) {
       if (!e.alive || e.lane !== lane) continue;
       if (e.kind === 'gap' && e.z <= 0 && e.z + e.len > 0) ground = null;
     }
+    state.overGap = ground === null;
     // En boost, le joueur file au-dessus des trous (invincible) : la vitesse accrue ne rend pas un trou impossible.
     if (ground === null && power.boost > 0 && player.y >= -0.1) return 0;
     for (const e of state.entities) {
@@ -248,6 +249,7 @@ export function createRun({ zone, character, seed, mode = 'zone' }) {
 
     // Vertical
     const ground = groundAt();
+    state.groundShadow = ground;
     if (player.grounded) {
       if (ground === null || ground < player.y - 0.05) {
         player.grounded = false; player.coyote = PHYS.coyoteTime; player.airKind = 'fall'; player.vy = 0;
