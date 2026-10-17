@@ -1,6 +1,6 @@
 const DB_NAME = 'budget';
-const DB_VERSION = 2;
-export const STORES = ['transactions', 'categories', 'settings'];
+const DB_VERSION = 3;
+export const STORES = ['transactions', 'categories', 'settings', 'settlements'];
 
 let dbPromise;
 
@@ -18,6 +18,7 @@ export function open() {
         db.createObjectStore('sync', { keyPath: 'key' });
         db.createObjectStore('outbox', { keyPath: 'key' });
       }
+      if (e.oldVersion < 3) db.createObjectStore('settlements', { keyPath: 'id' });
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);

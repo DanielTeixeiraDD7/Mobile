@@ -28,10 +28,17 @@ const saveMeta = () => db.put('sync', {
 const toServerTx = (t, hid) => ({
   id: t.id, household_id: hid, category_id: t.categoryId ?? null, type: t.type,
   amount: t.amount, date: t.date, note: t.note || '', deleted_at: null,
+  paid_by: t.paidBy ?? t.createdBy ?? currentUser().id, shared: t.shared !== false,
 });
 const fromServerTx = r => ({
   id: r.id, type: r.type, amount: Number(r.amount), categoryId: r.category_id, date: r.date,
-  note: r.note, createdAt: Date.parse(r.created_at), createdBy: r.created_by,
+  note: r.note, createdAt: Date.parse(r.created_at), createdBy: r.created_by, paidBy: r.paid_by, shared: r.shared,
+});
+const toServerSettlement = (s, hid) => ({
+  id: s.id, household_id: hid, month: s.month, from_user: s.from, to_user: s.to, amount: s.amount, deleted_at: null,
+});
+const fromServerSettlement = r => ({
+  id: r.id, month: r.month, from: r.from_user, to: r.to_user, amount: Number(r.amount), createdAt: Date.parse(r.created_at),
 });
 const toServerCat = (c, hid) => ({
   id: c.id, household_id: hid, key: c.key ?? null, name: c.name ?? null, kind: c.kind, color: c.color,
@@ -120,6 +127,12 @@ async function push() {
   for (const part of chunks(of('transactions').filter(i => !i.row))) {
     await rest(`transactions?id=in.(${part.map(i => i.id).join(',')})`, { method: 'PATCH', body: { deleted_at: now }, prefer: 'return=minimal' });
   }
+  for (const part of chunks(of('settlements').filter(i => i.row))) {
+    await rest('settlements?on_conflict=id', { method: 'POST', body: part.map(i => toServerSettlement(i.row, hid)), prefer: UPSERT });
+  }
+  for (const part of chunks(of('settlements').filter(i => !i.row))) {
+    await rest(`settlements?id=in.(${part.map(i => i.id).join(',')})`, { method: 'PATCH', body: { deleted_at: now }, prefer: 'return=minimal' });
+  }
   for (const part of chunks(of('categories').filter(i => !i.row))) {
     await rest(`categories?id=in.(${part.map(i => i.id).join(',')})`, { method: 'PATCH', body: { deleted_at: now }, prefer: 'return=minimal' });
   }
@@ -138,9 +151,10 @@ async function pull() {
   const hid = sync.householdId;
   const since = sync.lastPull ? new Date(Date.parse(sync.lastPull) - OVERLAP_MS).toISOString() : null;
   const filter = since ? `&updated_at=gt.${encodeURIComponent(since)}` : '';
-  const [txRows, catRows, households, members] = await Promise.all([
+  const [txRows, catRows, setRows, households, members] = await Promise.all([
     restAll(`transactions?household_id=eq.${hid}${filter}&order=updated_at.asc`),
     restAll(`categories?household_id=eq.${hid}${filter}&order=updated_at.asc`),
+    restAll(`settlements?household_id=eq.${hid}${filter}&order=updated_at.asc`),
     rest(`households?id=eq.${hid}&select=currency,monthly_budget`),
     rest(`household_members?household_id=eq.${hid}&select=user_id,display_name,role`),
   ]);
@@ -156,10 +170,11 @@ async function pull() {
   const changed = await applyRemote({
     transactions: txRows.map(r => ({ row: fromServerTx(r), deleted: !!r.deleted_at })),
     categories: catRows.map(r => ({ row: fromServerCat(r), deleted: !!r.deleted_at })),
+    settlements: setRows.map(r => ({ row: fromServerSettlement(r), deleted: !!r.deleted_at })),
     settings: h && { currency: h.currency, monthlyBudget: h.monthly_budget === null ? null : Number(h.monthly_budget) },
   }, pendingKeys);
 
-  const latest = [...txRows, ...catRows].map(r => r.updated_at).sort().at(-1);
+  const latest = [...txRows, ...catRows, ...setRows].map(r => r.updated_at).sort().at(-1);
   if (latest && (!sync.lastPull || latest > sync.lastPull)) sync.lastPull = latest;
   return changed > 0 || !since;
 }
@@ -237,3 +252,8 @@ export async function disconnect() {
 }
 
 export const memberName = userId => sync.members.find(m => m.user_id === userId)?.display_name;
+export const isCouple = () => !!sync.householdId && sync.members.length === 2;
+export const coupleIds = () => {
+  const me = currentUser()?.id;
+  return sync.members.map(m => m.user_id).sort((x, y) => (x === me ? -1 : y === me ? 1 : 0));
+};

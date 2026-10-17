@@ -4,8 +4,9 @@ import { money, signedMoney, currencySymbol, parseAmount, today, isoDate, shortD
 import { budgetStatus } from '../calc.js';
 import { toast, vibrate, $ } from '../ui.js';
 import { render } from '../router.js';
+import { whoControls, bindWho, whoFields } from './who.js';
 
-const draft = { amount: '', type: 'expense', date: today(), note: '' };
+const draft = { amount: '', type: 'expense', date: today(), note: '', paidBy: null, shared: true };
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', ',', '0', 'back'];
 
@@ -35,6 +36,7 @@ export function renderAdd(main) {
     </div>
     <output class="amount ${draft.type}" id="amount">${amountHtml()}</output>
     ${draft.type === 'expense' ? monthLine() : ''}
+    ${whoControls(draft)}
     <div class="meta">
       <label class="chip date-chip">📅 <span>${esc(dateChipLabel(draft.date))}</span>
         <input type="date" id="add-date" value="${draft.date}" max="${today()}" aria-label="${esc(t('form.date'))}">
@@ -63,6 +65,7 @@ export function renderAdd(main) {
     const b = e.target.closest('[data-cat]');
     if (b) submit(b.dataset.cat);
   };
+  bindWho(main, draft, render);
   $('#add-date').onchange = e => { draft.date = e.target.value || today(); render(); };
   $('#add-note').oninput = e => (draft.note = e.target.value);
 }
@@ -94,8 +97,8 @@ async function submit(categoryId) {
     return toast(t('add.enterAmount'), { kind: 'warn' });
   }
   const before = budgetStatus(currentMonth());
-  const tx = await saveTransaction({ type: draft.type, amount, categoryId, date: draft.date, note: draft.note.trim() });
-  Object.assign(draft, { amount: '', note: '', date: today() });
+  const tx = await saveTransaction({ type: draft.type, amount, categoryId, date: draft.date, note: draft.note.trim(), ...whoFields(draft) });
+  Object.assign(draft, { amount: '', note: '', date: today(), paidBy: null, shared: true });
   vibrate(20);
   render();
 

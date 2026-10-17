@@ -10,6 +10,7 @@ export function toJSON() {
     settings: state.settings,
     categories: state.categories,
     transactions: state.transactions,
+    settlements: state.settlements,
   }, null, 2);
 }
 
@@ -29,6 +30,6 @@ export async function restoreJSON(text) {
   }
   const transactions = data.transactions.filter(validTx);
   const categories = data.categories.filter(validCat);
-  await replaceAll({ transactions, categories, settings: data.settings || {} });
+  await replaceAll({ transactions, categories, settings: data.settings || {}, settlements: Array.isArray(data.settlements) ? data.settlements : [] });
   return transactions.length;
 }

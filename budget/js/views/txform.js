@@ -3,6 +3,7 @@ import { t, categoryName } from '../i18n.js';
 import { parseAmount, centsToInput, currencySymbol, today, esc } from '../format.js';
 import { sheet, toast, $ } from '../ui.js';
 import { render } from '../router.js';
+import { whoControls, bindWho, whoFields } from './who.js';
 
 export function editTransaction(tx) {
   const draft = { ...tx };
@@ -14,12 +15,13 @@ export function editTransaction(tx) {
   sheet(`
     <h2>${esc(t('form.editTitle'))}</h2>
     <form id="tx-form" class="form" novalidate>
-      <div class="seg">
+      <div class="seg" id="tx-type">
         ${['expense', 'income'].map(type => `<button type="button" data-type="${type}" class="${draft.type === type ? 'active ' + type : ''}">${t(`type.${type}`)}</button>`).join('')}
       </div>
       <label>${esc(t('form.amount'))} (${esc(currencySymbol())})
         <input id="tx-amount" inputmode="decimal" autocomplete="off" value="${centsToInput(draft.amount)}" required>
       </label>
+      <div id="tx-who">${whoControls(draft)}</div>
       <div>
         <span class="label">${esc(t('form.category'))}</span>
         <div class="cats compact" id="tx-cats">${catButtons()}</div>
@@ -34,13 +36,16 @@ export function editTransaction(tx) {
       </div>
     </form>`, {
     onMount: (panel, close) => {
-      panel.querySelector('.seg').onclick = e => {
+      const refreshWho = () => ($('#tx-who').innerHTML = whoControls(draft));
+      bindWho(panel, draft, refreshWho);
+      $('#tx-type').onclick = e => {
         const b = e.target.closest('[data-type]');
         if (!b || b.dataset.type === draft.type) return;
         draft.type = b.dataset.type;
         draft.categoryId = categoriesOf(draft.type)[0]?.id;
-        panel.querySelectorAll('.seg button').forEach(x => (x.className = x.dataset.type === draft.type ? `active ${draft.type}` : ''));
+        panel.querySelectorAll('#tx-type button').forEach(x => (x.className = x.dataset.type === draft.type ? `active ${draft.type}` : ''));
         $('#tx-cats').innerHTML = catButtons();
+        refreshWho();
       };
       $('#tx-cats').onclick = e => {
         const b = e.target.closest('[data-cat]');
@@ -52,7 +57,7 @@ export function editTransaction(tx) {
         e.preventDefault();
         const amount = parseAmount($('#tx-amount').value);
         if (!amount) return toast(t('form.invalidAmount'), { kind: 'warn' });
-        await saveTransaction({ ...draft, amount, date: $('#tx-date').value || draft.date, note: $('#tx-note').value.trim() });
+        await saveTransaction({ ...draft, ...whoFields(draft), amount, date: $('#tx-date').value || draft.date, note: $('#tx-note').value.trim() });
         close();
         render();
       };

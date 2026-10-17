@@ -5,6 +5,7 @@ import { budgetStatus } from '../calc.js';
 import { sheet, toast, $ } from '../ui.js';
 import { render } from '../router.js';
 import { month, monthNav, bindMonthNav } from './month.js';
+import { splitCard, bindSplit } from './split.js';
 
 function progress({ spent, cap, level }) {
   if (!cap) return '';
@@ -29,6 +30,7 @@ export function renderBudget(main) {
 
   main.innerHTML = `
   ${monthNav()}
+  ${splitCard(month.value)}
   <button type="button" class="card budget-global ${g.level}" data-edit="global">
     <div class="row between"><span class="label">${esc(t('budget.global'))}</span>${g.cap ? `<b class="pct">${percent(g.spent / g.cap)}</b>` : ''}</div>
     <p class="big">${money(g.spent)}${g.cap ? ` <small>/ ${money(g.cap)}</small>` : ''}</p>
@@ -54,6 +56,7 @@ export function renderBudget(main) {
   </ul>`;
 
   bindMonthNav(main, render);
+  bindSplit(main, month.value);
   main.querySelectorAll('[data-edit]').forEach(b => (b.onclick = () => editCap(b.dataset.edit)));
 }
 

@@ -11,6 +11,7 @@
   --expense: #c9372f;
   --warn: #b97400;
   --over: #c9372f;
+  --partner: #2f6fe0;
   --shadow: 0 8px 30px rgba(24, 32, 27, 0.12);
   --radius: 16px;
   --tabbar-h: 64px;
@@ -33,6 +34,7 @@
     --expense: #ff6b5e;
     --warn: #f2b33d;
     --over: #ff6b5e;
+    --partner: #6ea4ff;
     --shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
     color-scheme: dark;
   }
@@ -315,6 +317,37 @@ select {
   font-family: var(--mono); font-size: 1.8rem; font-weight: 800; letter-spacing: 0.2em; padding: 12px;
   border: 2px dashed var(--accent); border-radius: 14px; user-select: all; -webkit-user-select: all; overflow-wrap: anywhere;
 }
+
+/* Partage 50/50 */
+.who { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.who .label { flex: none; }
+.who .seg { flex: 1; min-width: 0; }
+.who .chip { border: 1px solid var(--line); }
+.who .chip.personal { background: color-mix(in srgb, var(--warn) 18%, var(--surface)); border-color: var(--warn); }
+.split-bar { position: relative; display: flex; height: 14px; border-radius: 99px; overflow: hidden; background: var(--surface-2); }
+.split-bar i { display: block; height: 100%; }
+.split-bar .p0 { background: var(--accent); }
+.split-bar .p1 { background: var(--partner); }
+.split-bar .half { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 2px; background: var(--text); opacity: 0.6; }
+.split-people { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.split-people div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.split-people div:last-child { text-align: right; }
+.split-people span { font-size: 0.8rem; color: var(--muted); }
+.split-people b { font-size: 1.2rem; font-variant-numeric: tabular-nums; }
+.split-people .p0 b { color: var(--accent); }
+.split-people .p1 b { color: var(--partner); }
+.split-result { font-size: 1.15rem; font-weight: 700; text-align: center; padding: 8px 0 2px; }
+.split-result.ok { color: var(--income); }
+.due { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); padding-top: 10px; }
+.refunds { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--line); padding-top: 10px; }
+.refund { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 0.9rem; }
+.icon-btn.small { width: 36px; height: 36px; font-size: 0.9rem; }
+.split-extra {
+  display: grid; grid-template-columns: auto 1fr 1fr; gap: 4px 12px; font-size: 0.82rem;
+  border-top: 1px solid var(--line); padding-top: 10px; font-variant-numeric: tabular-nums;
+}
+.split-extra > :nth-child(3n + 1) { color: var(--muted); }
+.split-extra > :not(:nth-child(3n + 1)) { text-align: right; }
 
 /* Formulaires */
 .form { display: flex; flex-direction: column; gap: 14px; }

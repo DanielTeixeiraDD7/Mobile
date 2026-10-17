@@ -27,11 +27,13 @@ Sur iPhone, l'app installée et Safari ne partagent pas leurs données : utilise
 
 Sans connexion, l'app reste 100 % locale. Dans Réglages → « Budget partagé », deux personnes peuvent partager le même budget via Supabase (PostgreSQL) :
 
-1. Exécuter `supabase/schema.sql` une fois dans Supabase → SQL Editor.
+1. Exécuter `supabase/schema.sql` puis `supabase/002_partage_50_50.sql` une fois dans Supabase → SQL Editor (si `schema.sql` est déjà installé, seulement le second).
 2. Mettre l'URL du projet et la clé `anon` dans `js/config.js` (la clé `service_role` ne doit jamais être dans le code).
 3. Dans Supabase → Authentication → Emails, ajouter `{{ .Token }}` aux modèles « Magic Link » et « Confirm signup » : l'app se connecte avec un code à 6 chiffres reçu par e-mail.
 4. La première personne crée le foyer et génère un code d'invitation (24 h, usage unique) ; la seconde le saisit.
 5. Une fois les deux comptes créés, désactiver les inscriptions : Authentication → Sign In / Providers → « Allow new users to sign up ».
+
+Partage 50/50 (onglet Budget, à deux) : chaque dépense a un « payé par » et peut être marquée « perso » (exclue du partage). L'app calcule ce que chacun a payé pour les dépenses communes, qui doit combien à l'autre, et enregistre les remboursements (« Marquer comme réglé »).
 
 Fonctionnement : les données restent dans IndexedDB ; chaque modification est mise dans une file d'attente (`js/outbox.js`) puis envoyée à l'API REST de Supabase (`js/sync.js`), qui renvoie aussi les modifications de l'autre personne. Hors-ligne, la file attend le retour du réseau. La sécurité repose sur la Row Level Security : voir `supabase/schema.sql` et les tests `supabase/test/`.
 

@@ -25,7 +25,7 @@ const DEFAULT_SETTINGS = {
 
 export const SHARED_SETTINGS = ['currency', 'monthlyBudget'];
 
-export const state = { transactions: [], categories: [], settings: { ...DEFAULT_SETTINGS } };
+export const state = { transactions: [], categories: [], settings: { ...DEFAULT_SETTINGS }, settlements: [] };
 
 export function uid() {
   if (crypto.randomUUID) return crypto.randomUUID();
@@ -38,8 +38,9 @@ export function uid() {
 
 export async function init() {
   navigator.storage?.persist?.().catch(() => {});
-  const [transactions, categories, settings] = await Promise.all(db.STORES.map(db.getAll));
+  const [transactions, categories, settings, settlements] = await Promise.all(db.STORES.map(db.getAll));
   state.transactions = transactions;
+  state.settlements = settlements;
   state.categories = categories.length ? categories : defaultCategories();
   if (!categories.length) await db.putMany('categories', state.categories);
   settings.forEach(({ key, value }) => (state.settings[key] = value));
@@ -84,6 +85,20 @@ export async function deleteCategory(id) {
   await outbox.enqueue('categories', id, null);
 }
 
+export async function saveSettlement(settlement) {
+  const item = { id: uid(), createdAt: Date.now(), ...settlement };
+  state.settlements.push(item);
+  await db.put('settlements', item);
+  await outbox.enqueue('settlements', item.id, item);
+  return item;
+}
+
+export async function deleteSettlement(id) {
+  state.settlements = state.settlements.filter(s => s.id !== id);
+  await db.remove('settlements', id);
+  await outbox.enqueue('settlements', id, null);
+}
+
 export async function setSetting(key, value) {
   state.settings[key] = value;
   await db.put('settings', { key, value });
@@ -92,17 +107,19 @@ export async function setSetting(key, value) {
 
 const sharedSettings = () => Object.fromEntries(SHARED_SETTINGS.map(k => [k, state.settings[k]]));
 
-export async function replaceAll({ transactions = [], categories = [], settings = {} }) {
+export async function replaceAll({ transactions = [], categories = [], settings = {}, settlements = [] }) {
   const merged = { ...DEFAULT_SETTINGS, ...settings };
   const cats = categories.length ? categories : defaultCategories();
   await db.replaceAll({
     transactions,
     categories: cats,
     settings: Object.entries(merged).map(([key, value]) => ({ key, value })),
+    settlements,
   });
   state.transactions = transactions;
   state.categories = cats;
   state.settings = merged;
+  state.settlements = settlements;
 }
 
 export async function addTransactions(list) {
@@ -113,36 +130,33 @@ export async function addTransactions(list) {
 
 // Remplace catégories et opérations par celles du foyer partagé, en conservant les réglages locaux.
 export async function adoptData({ transactions, categories }) {
-  await db.replaceAll({ transactions, categories }, ['transactions', 'categories']);
+  await db.replaceAll({ transactions, categories, settlements: [] }, ['transactions', 'categories', 'settlements']);
   state.transactions = transactions;
   state.categories = categories;
+  state.settlements = [];
 }
 
 // Applique les changements reçus du serveur (sauf les lignes modifiées localement et pas encore envoyées).
-export async function applyRemote({ transactions = [], categories = [], settings }, pendingKeys) {
-  const merge = (list, rows, table) => {
-    const byId = new Map(list.map(x => [x.id, x]));
+export async function applyRemote({ settings, ...tables }, pendingKeys) {
+  let changed = 0;
+  for (const [table, rows] of Object.entries(tables)) {
+    const byId = new Map(state[table].map(x => [x.id, x]));
     const put = [], del = [];
     for (const { row, deleted } of rows) {
       if (pendingKeys.has(`${table}:${row.id}`)) continue;
       if (deleted) { byId.delete(row.id); del.push(row.id); }
       else { byId.set(row.id, row); put.push(row); }
     }
-    return { list: [...byId.values()], put, del };
-  };
-  const tx = merge(state.transactions, transactions, 'transactions');
-  const cat = merge(state.categories, categories, 'categories');
-  state.transactions = tx.list;
-  state.categories = cat.list;
-  await db.putMany('transactions', tx.put);
-  await db.removeMany('transactions', tx.del);
-  await db.putMany('categories', cat.put);
-  await db.removeMany('categories', cat.del);
+    state[table] = [...byId.values()];
+    await db.putMany(table, put);
+    await db.removeMany(table, del);
+    changed += put.length + del.length;
+  }
   if (settings && !pendingKeys.has('household:settings')) {
     Object.assign(state.settings, settings);
     await db.putMany('settings', Object.entries(settings).map(([key, value]) => ({ key, value })));
   }
-  return tx.put.length + tx.del.length + cat.put.length + cat.del.length;
+  return changed;
 }
 
 export const fallbackCategory = kind =>

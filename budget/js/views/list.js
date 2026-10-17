@@ -4,7 +4,7 @@ import { money, signedMoney, dateLabel, today, esc } from '../format.js';
 import { txOfMonth, totals } from '../calc.js';
 import { gestures, $$ } from '../ui.js';
 import { render } from '../router.js';
-import { sync, memberName } from '../sync.js';
+import { sync, memberName, isCouple } from '../sync.js';
 import { currentUser } from '../auth.js';
 import { month, monthNav, bindMonthNav } from './month.js';
 import { editTransaction, transactionActions, removeWithUndo, findTx } from './txform.js';
@@ -43,8 +43,13 @@ export function renderList(main) {
 }
 
 function subtitle(tx) {
-  const author = sync.members.length > 1 && tx.createdBy && tx.createdBy !== currentUser()?.id && memberName(tx.createdBy);
-  return [tx.note, author && t('share.by', { name: author })].filter(Boolean).join(' · ');
+  const payer = tx.paidBy ?? tx.createdBy;
+  const name = sync.members.length > 1 && payer && payer !== currentUser()?.id && memberName(payer);
+  return [
+    tx.note,
+    name && t(tx.type === 'income' ? 'list.receivedBy' : 'list.paidBy', { name }),
+    isCouple() && tx.type === 'expense' && tx.shared === false && t('list.personal'),
+  ].filter(Boolean).join(' · ');
 }
 
 function row(tx) {
