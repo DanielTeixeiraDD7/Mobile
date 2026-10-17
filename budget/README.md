@@ -29,7 +29,7 @@ Sans connexion, l'app reste 100 % locale. Dans Réglages → « Budget partagé 
 
 1. Exécuter `supabase/schema.sql` puis `supabase/002_partage_50_50.sql` une fois dans Supabase → SQL Editor (si `schema.sql` est déjà installé, seulement le second).
 2. Mettre l'URL du projet et la clé `anon` dans `js/config.js` (la clé `service_role` ne doit jamais être dans le code).
-3. Dans Supabase → Authentication → Emails, ajouter `{{ .Token }}` aux modèles « Magic Link » et « Confirm signup » : l'app se connecte avec un code à 6 chiffres reçu par e-mail.
+3. Connexion par e-mail + mot de passe. Le plus simple : Supabase → Authentication → Sign In / Providers → Email → désactiver « Confirm email » (sinon, chacun confirme son e-mail via le lien reçu, puis se connecte ; régler alors Site URL sur l'adresse de l'app).
 4. La première personne crée le foyer et génère un code d'invitation (24 h, usage unique) ; la seconde le saisit.
 5. Une fois les deux comptes créés, désactiver les inscriptions : Authentication → Sign In / Providers → « Allow new users to sign up ».
 

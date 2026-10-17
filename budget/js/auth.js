@@ -50,10 +50,16 @@ const toSession = data => ({
   user: { id: data.user.id, email: data.user.email },
 });
 
-export const requestCode = email => authRequest('otp', { email, create_user: true });
+// Renvoie true si le compte est utilisable tout de suite, false s'il faut d'abord confirmer l'e-mail.
+export async function signUp(email, password) {
+  const data = await authRequest('signup', { email, password });
+  if (!data.access_token) return false;
+  await storeSession(toSession(data));
+  return true;
+}
 
-export async function verifyCode(email, token) {
-  const data = await authRequest('verify', { type: 'email', email, token });
+export async function signIn(email, password) {
+  const data = await authRequest('token?grant_type=password', { email, password });
   await storeSession(toSession(data));
   return session.user;
 }

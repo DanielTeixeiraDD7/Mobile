@@ -1,16 +1,21 @@
 import { t } from '../i18n.js';
 import { esc, ago } from '../format.js';
-import { currentUser, requestCode, verifyCode } from '../auth.js';
+import { currentUser, signIn, signUp } from '../auth.js';
 import { sync, syncNow, resumeHousehold, createHousehold, joinHousehold, createInvitation, disconnect } from '../sync.js';
 import { toast, confirmSheet, $ } from '../ui.js';
 import { render } from '../router.js';
 
-const ui = { step: 'email', email: '', busy: false, invite: null };
+const ui = { email: '', busy: false, invite: null, confirm: false };
 
 function errorMessage(e) {
   if (e.status === 0) return t('share.err.offline');
-  if (e.status === 429 || /rate/i.test(e.code || e.message)) return t('share.err.rate');
-  if (/expired|invalid/i.test(e.message) || e.code === 'otp_expired') return t('share.err.code');
+  if (e.status === 429 || /rate/i.test(e.code || '')) return t('share.err.rate');
+  const byCode = {
+    invalid_credentials: 'share.err.credentials', email_not_confirmed: 'share.err.notConfirmed',
+    user_already_exists: 'share.err.exists', weak_password: 'share.err.weak', signup_disabled: 'share.err.closed',
+  };
+  if (byCode[e.code]) return t(byCode[e.code]);
+  if (/invalid or expired code/i.test(e.message)) return t('share.err.code');
   return t('share.err.generic', { error: e.message });
 }
 
@@ -44,17 +49,15 @@ export function shareSection() {
   let body;
 
   if (!user) {
-    body = ui.step === 'email' ? `
+    body = `
       <p class="small muted">${esc(t('share.intro'))}</p>
-      <form id="share-email" class="form" novalidate>
+      ${ui.confirm ? `<p class="notice">${esc(t('share.confirmEmail'))}</p>` : ''}
+      <form id="share-login" class="form" novalidate>
         <label>${esc(t('share.email'))}<input id="share-email-input" type="email" autocomplete="email" inputmode="email" value="${esc(ui.email)}" required></label>
-        <button type="submit" class="btn primary" ${disabled}>${esc(t('share.sendCode'))}</button>
-      </form>` : `
-      <p class="small muted">${esc(t('share.codeSent', { email: ui.email }))}</p>
-      <form id="share-code" class="form" novalidate>
-        <label>${esc(t('share.code'))}<input id="share-code-input" inputmode="numeric" autocomplete="one-time-code" maxlength="10" class="code-input" required></label>
-        <button type="submit" class="btn primary" ${disabled}>${esc(t('share.verify'))}</button>
-        <button type="button" class="btn ghost" id="share-back">${esc(t('share.changeEmail'))}</button>
+        <label>${esc(t('share.password'))}<input id="share-password" type="password" autocomplete="current-password" minlength="6" required></label>
+        <button type="submit" class="btn primary" ${disabled}>${esc(t('share.signIn'))}</button>
+        <button type="button" class="btn" id="share-signup" ${disabled}>${esc(t('share.signUp'))}</button>
+        <p class="small muted">${esc(t('share.passwordHelp'))}</p>
       </form>`;
   } else if (!sync.householdId) {
     body = `
@@ -93,27 +96,30 @@ export function shareSection() {
 }
 
 export function bindShare() {
-  $('#share-email')?.addEventListener('submit', e => {
-    e.preventDefault();
+  const credentials = () => {
     const email = $('#share-email-input').value.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast(t('share.err.email'), { kind: 'warn' });
-    action(async () => {
-      await requestCode(email);
-      Object.assign(ui, { email, step: 'code' });
-    });
-  });
-
-  $('#share-code')?.addEventListener('submit', e => {
+    const password = $('#share-password').value;
+    ui.email = email;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast(t('share.err.email'), { kind: 'warn' }); return null; }
+    if (password.length < 6) { toast(t('share.err.weak'), { kind: 'warn' }); return null; }
+    return { email, password };
+  };
+  const afterLogin = async () => {
+    ui.confirm = false;
+    if (await resumeHousehold()) toast(t('share.joined'));
+  };
+  $('#share-login')?.addEventListener('submit', e => {
     e.preventDefault();
-    const code = $('#share-code-input').value.replace(/\D/g, '');
-    if (code.length < 6) return toast(t('share.err.code'), { kind: 'warn' });
-    action(async () => {
-      await verifyCode(ui.email, code);
-      ui.step = 'email';
-      if (await resumeHousehold()) toast(t('share.joined'));
+    const c = credentials();
+    if (c) action(async () => { await signIn(c.email, c.password); await afterLogin(); });
+  });
+  $('#share-signup')?.addEventListener('click', () => {
+    const c = credentials();
+    if (c) action(async () => {
+      if (await signUp(c.email, c.password)) await afterLogin();
+      else ui.confirm = true;
     });
   });
-  $('#share-back')?.addEventListener('click', () => { ui.step = 'email'; render(); });
 
   const name = () => {
     const value = $('#share-name').value.trim();

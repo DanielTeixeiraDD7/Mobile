@@ -293,6 +293,7 @@ select {
 .cat-list .chev { flex: none; color: var(--muted); font-size: 1.3rem; }
 
 /* Partage */
+.notice { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); border-radius: 12px; padding: 12px; font-size: 0.9rem; }
 .center { text-align: center; }
 .share .row input { flex: 1; min-width: 0; }
 .code-input {
