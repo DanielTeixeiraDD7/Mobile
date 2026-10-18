@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f7fb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="AutoRadar">
+  <meta name="description" content="Chercher une voiture au Portugal, en France, en Allemagne et en Belgique, comparer les annonces et calculer l'import.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <title>AutoRadar</title>
+  <script>
+    // Thème appliqué avant le rendu (évite un flash clair en mode sombre).
+    try {
+      var t = (JSON.parse(localStorage.getItem('autoradar:reglages') || '{}').theme) || 'auto';
+      if (t === 'sombre' || (t === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('app-dark');
+    } catch (e) {}
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+  <noscript>AutoRadar nécessite JavaScript.</noscript>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

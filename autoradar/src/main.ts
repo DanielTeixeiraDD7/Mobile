@@ -35,6 +35,14 @@ app.use(ConfirmationService);
 app.directive('tooltip', Tooltip);
 // Composants PrimeVue utilisés partout : enregistrés globalement.
 for (const [nom, c] of Object.entries({ Button, Tag, Drawer, InputText, InputNumber, Select, SelectButton, Textarea })) app.component(nom, c);
+// Partage depuis une autre app (Android : « Partager » → AutoRadar) : ?url=… ou ?text=… contenant le lien.
+const partage = new URLSearchParams(location.search);
+const lienPartage = [partage.get('url'), partage.get('text')].map(v => v?.match(/https?:\/\/\S+/)?.[0]).find(Boolean);
+if (lienPartage) {
+  history.replaceState(null, '', location.pathname + location.hash);
+  router.replace({ path: '/annonces', query: { url: lienPartage } });
+}
+
 app.mount('#app');
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
