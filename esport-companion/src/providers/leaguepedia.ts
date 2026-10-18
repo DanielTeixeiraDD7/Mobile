@@ -87,11 +87,13 @@ const norm = (c: string) => c.toLowerCase().replace(/[^a-z0-9]/g, '');
  * - sinon → draft écartée (jamais affichée si elle ne colle pas aux données officielles).
  * `alias` : nom → identifiant (« Wukong » → MonkeyKing) pour comparer avec le flux.
  */
-export function alignDraft(draft: DraftStep[], official: { blue: string[]; red: string[] }, alias: (name: string) => string = n => n): DraftStep[] | null {
+export function alignDraft(draft: DraftStep[], official: { blue: string[]; red: string[] }, alias: (name: string) => string = n => n): { draft: DraftStep[]; swapped: boolean } | null {
   const picks = (side: Side) => draft.filter(d => d.kind === 'pick' && d.side === side).map(d => norm(alias(d.champion ?? ''))).sort().join(',');
   const off = (l: string[]) => l.map(norm).sort().join(',');
   if (!draft.length || !official.blue.length) return null;
-  if (picks('blue') === off(official.blue) && picks('red') === off(official.red)) return draft;
-  if (picks('blue') === off(official.red) && picks('red') === off(official.blue)) return draft.map(d => ({ ...d, side: d.side === 'blue' ? 'red' : 'blue' }));
+  if (picks('blue') === off(official.blue) && picks('red') === off(official.red)) return { draft, swapped: false };
+  // Côtés inversés entre les deux sources (observé en réel) : champions recalés par équipe,
+  // mais l'ordre « qui choisit en premier » n'est alors plus garanti.
+  if (picks('blue') === off(official.red) && picks('red') === off(official.blue)) return { draft: draft.map(d => ({ ...d, side: d.side === 'blue' ? 'red' : 'blue' })), swapped: true };
   return null;
 }

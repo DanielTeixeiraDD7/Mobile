@@ -1,6 +1,6 @@
 /* Service worker Esport Companion — généré au build (voir vite.config.ts). */
-const VERSION = 'esport-63cceee828';
-const ASSETS = ["./","assets/index-CkN9lT0j.css","assets/index-D8QcNyQV.js","manifest.webmanifest","icons/icon.svg","icons/icon-192.png","icons/icon-512.png","icons/apple-touch-icon.png"];
+const VERSION = 'esport-3e7db5e530';
+const ASSETS = ["./","assets/index-CBzJtrH4.js","assets/index-CkN9lT0j.css","manifest.webmanifest","icons/icon.svg","icons/icon-192.png","icons/icon-512.png","icons/apple-touch-icon.png"];
 const IMAGES = 'esport-images';
 const MAX_IMAGES = 600;
 

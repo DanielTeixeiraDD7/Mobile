@@ -34,6 +34,8 @@ Tests réels depuis l'environnement de développement :
 
 - URL : `https://lol.fandom.com/api.php?action=cargoquery&origin=*` — CORS `*` vérifié. Contenu **CC BY-SA 3.0** (attribution affichée).
 - Rôle : **vainqueur officiel de chaque partie** et **draft complète dans l'ordre** (tables `MatchSchedule`, `MatchScheduleGame`, `PicksAndBansS7`). Vérifié sur MVK–FURIA (Worlds 2026) : 4 parties, vainqueurs 1-1-2-1.
+- Requête réelle validée le 18/10/2026 : 4 parties MVK–FURIA, vainqueurs 1-1-2-1 (= 3-1 publié par Riot), 10 bans et 10 picks par partie.
+- **Incohérence constatée** : pour la partie 1, les picks « Team1 » de `PicksAndBansS7` sont les champions joués côté **rouge** d'après le flux officiel. L'app compare donc toujours les picks aux champions du flux. S'ils sont inversés, elle les rattache à la bonne équipe et masque l'ordre de sélection, qui n'est plus garanti. S'ils ne correspondent pas, la draft n'est pas affichée.
 - Rapprochement avec lolesports : **noms d'équipes exacts** + date ±18 h, puis contrôle contre le score de la série. Aucun rapprochement approximatif.
 - Limite : stricte pour les requêtes anonymes. L'IP partagée du serveur de test a été limitée après 3 requêtes. L'app fait 1 requête par match ouvert, garde le résultat 30 jours, détecte l'erreur `ratelimited` (renvoyée en HTTP 200) et se met en pause. En cas d'échec, la fiche garde le vainqueur déduit.
 

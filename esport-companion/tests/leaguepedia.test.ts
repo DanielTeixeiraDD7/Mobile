@@ -44,9 +44,11 @@ describe('draft vérifiée contre le flux officiel', () => {
     const { alignDraft } = await import('../src/providers/leaguepedia');
     const d = parseGames([row(1, '1')])[0]!.draft;
     const blue = ['Azir', 'Vi2', "Kai'Sa", 'Renekton', 'Nautilus'], red = ['Orianna', 'Sejuani', 'Rell', 'Gnar', 'Varus'];
-    expect(alignDraft(d, { blue, red })).toBe(d);
-    expect(alignDraft(d, { blue: red, red: blue })![0]!.side).toBe('red');
+    expect(alignDraft(d, { blue, red })).toEqual({ draft: d, swapped: false });
+    const sw = alignDraft(d, { blue: red, red: blue })!;
+    expect(sw.swapped).toBe(true);
+    expect(sw.draft[0]!.side).toBe('red');
     expect(alignDraft(d, { blue: ['Teemo'], red })).toBeNull();
-    expect(alignDraft(d, { blue: ['MonkeyKing', 'Vi2', 'KaiSa', 'Renekton', 'Nautilus'], red }, n => (n === 'Azir' ? 'MonkeyKing' : n))).toBe(d);
+    expect(alignDraft(d, { blue: ['MonkeyKing', 'Vi2', 'KaiSa', 'Renekton', 'Nautilus'], red }, n => (n === 'Azir' ? 'MonkeyKing' : n))?.swapped).toBe(false);
   });
 });

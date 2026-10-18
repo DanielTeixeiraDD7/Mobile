@@ -89,10 +89,11 @@ export function LolGamePanel({ match, game, lp }: PanelProps) {
   const kda = (p: LolPlayerLine) => (p.kills + p.assists) / Math.max(1, p.deaths);
   const bestKda = top(kda), bestDmg = top(p => p.damageShare);
   // Draft Leaguepedia gardée seulement si ses picks = champions officiels du flux, côté par côté.
-  const draft = lp && ids ? alignDraft(lp.draft, {
+  const aligned = lp && ids ? alignDraft(lp.draft, {
     blue: data.players.filter(p => p.side === 'blue').map(p => p.champion),
     red: data.players.filter(p => p.side === 'red').map(p => p.champion),
   }, n => ids.get(normChamp(n)) ?? n) : null;
+  const draft = aligned?.draft ?? null;
   // Vainqueur : officiel (Leaguepedia, vérifié contre la série) sinon déduit de l'état final.
   const official = game.winner !== null ? (idxOf('blue') === game.winner ? 'blue' : 'red') : null;
   const winnerSide = official ?? data.winner;
@@ -134,7 +135,7 @@ export function LolGamePanel({ match, game, lp }: PanelProps) {
         </p>
       </div>
 
-      {draft && <Draft lp={{ ...lp!, draft }} v={v} ids={ids} nameOf={nameOf} />}
+      {draft && <Draft lp={{ ...lp!, draft }} v={v} ids={ids} nameOf={nameOf} ordered={!aligned!.swapped} />}
       {lp && lp.draft.length > 0 && !draft && ids && <p className="tiny dim">Draft Leaguepedia écartée : ses champions ne correspondent pas à ceux du flux officiel.</p>}
 
       <div className="card">
@@ -198,25 +199,25 @@ export function LolGamePanel({ match, game, lp }: PanelProps) {
   );
 }
 
-function Draft({ lp, v, ids, nameOf }: { lp: LpGame; v: string | null; ids: Map<string, string> | null; nameOf: (s: 'blue' | 'red') => string }) {
+function Draft({ lp, v, ids, nameOf, ordered }: { lp: LpGame; v: string | null; ids: Map<string, string> | null; nameOf: (s: 'blue' | 'red') => string; ordered: boolean }) {
   const img = (c: string | null) => (c && v && ids?.get(normChamp(c)) ? champImg(v, ids.get(normChamp(c))!) : null);
   return (
     <div className="card">
-      <p className="label" style={{ marginTop: 0 }}>Draft (ordre réel) <span className="tag official">Leaguepedia</span></p>
+      <p className="label" style={{ marginTop: 0 }}>{ordered ? 'Draft (ordre réel)' : 'Picks et bans'} <span className="tag official">Leaguepedia</span></p>
       <div className="draft">
         {(['blue', 'red'] as const).map(side => (
           <div key={side} className="col">
             <strong className="small" style={{ color: side === 'blue' ? 'var(--blue)' : 'var(--red)' }}>{nameOf(side)}</strong>
             {lp.draft.filter(d => d.side === side && d.kind === 'pick').map(d => (
-              <span key={d.order} className="pick">{img(d.champion) ? <img src={img(d.champion)!} alt="" loading="lazy" /> : <img alt="" />}<span>{d.champion ?? '—'}<br /><span className="tiny dim">choix n°{d.order + 1}</span></span></span>
+              <span key={d.order} className="pick">{img(d.champion) ? <img src={img(d.champion)!} alt="" loading="lazy" /> : <img alt="" />}<span>{d.champion ?? '—'}{ordered && <><br /><span className="tiny dim">choix n°{d.order + 1}</span></>}</span></span>
             ))}
             <span className="bans">{lp.draft.filter(d => d.side === side && d.kind === 'ban').map(d => (
-              <span key={d.order} className="pick ban" title={`Ban n°${d.order + 1} : ${d.champion ?? 'aucun'}`}>{img(d.champion) ? <img src={img(d.champion)!} alt={d.champion ?? ''} loading="lazy" /> : <span className="tiny dim">{d.champion ?? '∅'}</span>}</span>
+              <span key={d.order} className="pick ban" title={ordered ? `Ban n°${d.order + 1} : ${d.champion ?? 'aucun'}` : `Ban : ${d.champion ?? 'aucun'}`}>{img(d.champion) ? <img src={img(d.champion)!} alt={d.champion ?? ''} loading="lazy" /> : <span className="tiny dim">{d.champion ?? '∅'}</span>}</span>
             ))}</span>
           </div>
         ))}
       </div>
-      <p className="tiny dim" style={{ marginBottom: 0 }}>Numéros = position dans les 20 étapes de la draft de tournoi.</p>
+      <p className="tiny dim" style={{ marginBottom: 0 }}>{ordered ? 'Numéros = position dans les 20 étapes de la draft de tournoi.' : "Côtés inversés entre Leaguepedia et le flux officiel : champions rattachés à la bonne équipe d'après le flux, ordre de sélection non affiché car non garanti."}</p>
     </div>
   );
 }
