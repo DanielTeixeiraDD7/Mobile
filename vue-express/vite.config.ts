@@ -53,7 +53,16 @@ export default defineConfig({
       ...(isTest ? {} : { '@vue/compiler-sfc': fileURLToPath(new URL('./node_modules/@vue/compiler-sfc/dist/compiler-sfc.esm-browser.js', import.meta.url)) }),
     },
   },
-  build: { outDir: '../vue', emptyOutDir: true, target: 'es2022', chunkSizeWarningLimit: 2500 },
+  build: {
+    outDir: '../vue', emptyOutDir: true, target: 'es2022', chunkSizeWarningLimit: 2500,
+    // GitHub Pages (Jekyll) ignore les fichiers commençant par « _ » : _ID.vue → ID-xxxx.js.
+    rollupOptions: {
+      output: {
+        chunkFileNames: c => `assets/${c.name.replace(/^_+/, '')}-[hash].js`,
+        assetFileNames: a => `assets/${(a.names?.[0] ?? 'asset').replace(/^_+/, '').replace(/\.[^.]+$/, '')}-[hash][extname]`,
+      },
+    },
+  },
   test: {
     environment: 'jsdom',
     include: ['tests/**/*.test.ts'],
