@@ -1,11 +1,13 @@
 import type { ComponentType } from 'react';
 import type { Match, MatchGame } from '../core/model';
+import type { LpGame } from '../providers/leaguepedia';
 import { DotaGamePanel } from './dotaView';
 import { LolGamePanel } from './lolView';
 import { ValGamePanel } from './valView';
 
 /** Vue de partie propre à chaque jeu (statistiques spécifiques). */
-export const GAME_PANELS: Record<string, ComponentType<{ match: Match; game: MatchGame }>> = {
+export interface PanelProps { match: Match; game: MatchGame; lp?: LpGame | null }
+export const GAME_PANELS: Record<string, ComponentType<PanelProps>> = {
   lol: LolGamePanel,
   dota2: DotaGamePanel,
   valorant: ValGamePanel,

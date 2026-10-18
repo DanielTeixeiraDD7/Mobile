@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { summarizeGame } from '../core/analysis';
 import { errorText, isAbort } from '../core/errors';
 import { http } from '../core/http';
-import type { Match, MatchGame } from '../core/model';
+import type { MatchGame } from '../core/model';
 import { loadGame, objectives, type LolGameStats, type LolPlayerLine } from '../providers/lolLivestats';
 import { Chart, Compare } from '../ui/Chart';
 import { Banner } from '../ui/common';
 import { clock, kGold, num, pct } from '../ui/format';
 import { Analysis } from '../ui/Analysis';
+import type { PanelProps } from './views';
+import { alignDraft, type LpGame } from '../providers/leaguepedia';
 
 const DD = { id: 'ddragon', name: 'Data Dragon (Riot)', baseUrl: 'https://ddragon.leagueoflegends.com/', rpm: 20 };
 let ddVersion: string | null = null;
@@ -21,6 +23,21 @@ function useDDragon() {
   useEffect(() => { if (!v) void ddragonVersion().then(setV); }, [v]);
   return v;
 }
+let champNames: Map<string, string> | null = null;
+const normChamp = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+/** Nom affiché (Leaguepedia) → identifiant d'image Data Dragon (« Wukong » → MonkeyKing). */
+async function championIds(v: string): Promise<Map<string, string>> {
+  if (champNames) return champNames;
+  const r = await http.get<{ data: Record<string, { id: string; name: string }> }>(DD, `cdn/${v}/data/en_US/champion.json`, { ttl: 7 * 86_400_000 });
+  champNames = new Map(Object.values(r.data.data).flatMap(c => [[normChamp(c.name), c.id], [normChamp(c.id), c.id]] as [string, string][]));
+  return champNames;
+}
+function useChampionIds(v: string | null) {
+  const [m, setM] = useState<Map<string, string> | null>(champNames);
+  useEffect(() => { if (v && !m) void championIds(v).then(setM).catch(() => {}); }, [v, m]);
+  return m;
+}
+
 const champImg = (v: string | null, id: string) => (v ? `https://ddragon.leagueoflegends.com/cdn/${v}/img/champion/${id}.png` : null);
 const itemImg = (v: string | null, id: number) => (v ? `https://ddragon.leagueoflegends.com/cdn/${v}/img/item/${id}.png` : null);
 
@@ -52,8 +69,9 @@ function useLolGame(game: MatchGame) {
   return s;
 }
 
-export function LolGamePanel({ match, game }: { match: Match; game: MatchGame }) {
+export function LolGamePanel({ match, game, lp }: PanelProps) {
   const v = useDDragon();
+  const ids = useChampionIds(v);
   const { data, loading, error } = useLolGame(game);
   if (game.status === 'upcoming') return <p className="muted">Partie pas encore commencée.</p>;
   if (game.status === 'unneeded') return <p className="muted">Partie non jouée (série déjà décidée).</p>;
@@ -70,9 +88,17 @@ export function LolGamePanel({ match, game }: { match: Match; game: MatchGame })
   const top = (f: (p: LolPlayerLine) => number | null) => [...data.players].filter(p => f(p) !== null).sort((a, b) => f(b)! - f(a)!)[0];
   const kda = (p: LolPlayerLine) => (p.kills + p.assists) / Math.max(1, p.deaths);
   const bestKda = top(kda), bestDmg = top(p => p.damageShare);
+  // Draft Leaguepedia gardée seulement si ses picks = champions officiels du flux, côté par côté.
+  const draft = lp && ids ? alignDraft(lp.draft, {
+    blue: data.players.filter(p => p.side === 'blue').map(p => p.champion),
+    red: data.players.filter(p => p.side === 'red').map(p => p.champion),
+  }, n => ids.get(normChamp(n)) ?? n) : null;
+  // Vainqueur : officiel (Leaguepedia, vérifié contre la série) sinon déduit de l'état final.
+  const official = game.winner !== null ? (idxOf('blue') === game.winner ? 'blue' : 'red') : null;
+  const winnerSide = official ?? data.winner;
   const lines = summarizeGame({
     names: [nameOf('blue'), nameOf('red')],
-    winner: data.winner ? { side: data.winner === 'blue' ? 0 : 1, inferred: true } : null,
+    winner: winnerSide ? { side: winnerSide === 'blue' ? 0 : 1, inferred: !official } : null,
     duration: data.duration,
     gold: data.timeline.map(p => ({ t: p.t, diff: p.blueGold - p.redGold })),
     goldUnit: 'gold', comebackThreshold: 3000,
@@ -103,9 +129,13 @@ export function LolGamePanel({ match, game }: { match: Match; game: MatchGame })
         </div>
         <p className="small muted" style={{ marginBottom: 0 }}>
           Dragons : {(['blue', 'red'] as const).map(s => `${nameOf(s)} ${lastDragons[s].map(d => DRAGON[d] ?? d).join(', ') || 'aucun'}`).join(' · ')}
-          {data.winner && <> · <span className="tag inferred">vainqueur déduit : {nameOf(data.winner)}</span></>}
+          {official ? <> · <span className="tag official">vainqueur : {nameOf(official)} (Leaguepedia)</span></>
+            : data.winner && <> · <span className="tag inferred">vainqueur déduit : {nameOf(data.winner)}</span></>}
         </p>
       </div>
+
+      {draft && <Draft lp={{ ...lp!, draft }} v={v} ids={ids} nameOf={nameOf} />}
+      {lp && lp.draft.length > 0 && !draft && ids && <p className="tiny dim">Draft Leaguepedia écartée : ses champions ne correspondent pas à ceux du flux officiel.</p>}
 
       <div className="card">
         <p className="label" style={{ marginTop: 0 }}>Différence de gold (bleu − rouge)</p>
@@ -162,8 +192,31 @@ export function LolGamePanel({ match, game }: { match: Match; game: MatchGame })
           </div>
         </div>
       ))}
-      <p className="tiny dim">KDA, CS/min : calculés. Dégâts = part des dégâts aux champions de l'équipe. Gold = gold actuel du joueur. Bans et ordre de draft non publiés par ce flux. Patch {data.patch}.</p>
+      <p className="tiny dim">KDA, CS/min : calculés. Dégâts = part des dégâts aux champions de l'équipe. Gold = gold actuel du joueur. {draft ? 'Draft : Leaguepedia (CC BY-SA), vérifiée contre les champions du flux officiel.' : 'Bans et ordre de draft : non publiés par ce flux et non trouvés sur Leaguepedia.'} Patch {data.patch}.</p>
       <Analysis lines={lines} />
+    </div>
+  );
+}
+
+function Draft({ lp, v, ids, nameOf }: { lp: LpGame; v: string | null; ids: Map<string, string> | null; nameOf: (s: 'blue' | 'red') => string }) {
+  const img = (c: string | null) => (c && v && ids?.get(normChamp(c)) ? champImg(v, ids.get(normChamp(c))!) : null);
+  return (
+    <div className="card">
+      <p className="label" style={{ marginTop: 0 }}>Draft (ordre réel) <span className="tag official">Leaguepedia</span></p>
+      <div className="draft">
+        {(['blue', 'red'] as const).map(side => (
+          <div key={side} className="col">
+            <strong className="small" style={{ color: side === 'blue' ? 'var(--blue)' : 'var(--red)' }}>{nameOf(side)}</strong>
+            {lp.draft.filter(d => d.side === side && d.kind === 'pick').map(d => (
+              <span key={d.order} className="pick">{img(d.champion) ? <img src={img(d.champion)!} alt="" loading="lazy" /> : <img alt="" />}<span>{d.champion ?? '—'}<br /><span className="tiny dim">choix n°{d.order + 1}</span></span></span>
+            ))}
+            <span className="bans">{lp.draft.filter(d => d.side === side && d.kind === 'ban').map(d => (
+              <span key={d.order} className="pick ban" title={`Ban n°${d.order + 1} : ${d.champion ?? 'aucun'}`}>{img(d.champion) ? <img src={img(d.champion)!} alt={d.champion ?? ''} loading="lazy" /> : <span className="tiny dim">{d.champion ?? '∅'}</span>}</span>
+            ))}</span>
+          </div>
+        ))}
+      </div>
+      <p className="tiny dim" style={{ marginBottom: 0 }}>Numéros = position dans les 20 étapes de la draft de tournoi.</p>
     </div>
   );
 }

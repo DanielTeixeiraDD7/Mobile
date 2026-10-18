@@ -11,10 +11,10 @@
 - [x] Phase 6 : VALORANT (résultats, calendrier, classements) ; autres jeux via import
 - [x] Phase 7 : graphiques, comparaisons, analyses déterministes, forme, confrontations, favoris, filtres, vues
 - [x] Phase 8 : rappels (.ics + notifications), import/export, documentation, tests
+- [x] v1.1 : LoL — vainqueur officiel par partie et draft ordonnée via Leaguepedia ; fiche joueur Dota 2
 
 ## Prochaines étapes possibles (toutes gratuites)
 
-- **LoL** : bans et ordre de draft, et vainqueur officiel par partie, via Leaguepedia (CC BY-SA, CORS ouvert). Bloqué ici par une limite d'IP à revérifier depuis le téléphone.
 - **Connecteur PandaScore optionnel** (jeton gratuit à saisir) : calendrier CS2, Rocket League, R6, Overwatch.
 - **start.gg** (jeton gratuit) : brackets de jeux de combat.
 - **Statistiques agrégées LoL** par joueur et par champion, calculées sur les parties déjà consultées.

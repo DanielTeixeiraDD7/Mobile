@@ -122,7 +122,11 @@ export function createRiotAdapter(cfg: RiotAdapterConfig): GameAdapter & {
         prov: { source: src, kind: 'official', fetchedAt: r.fetchedAt, confidence: 'high' },
       };
       const games = gamesOf(d, [t[0]?.id, t[1]?.id]);
-      return { data: { match, games, quality: checkMatch(match, games) }, fetchedAt: r.fetchedAt, stale: r.stale };
+      const streams = (d.streams ?? []).filter(x => x.provider === 'twitch' || x.provider === 'youtube')
+        .sort((a, b) => Number(b.locale.startsWith('fr')) - Number(a.locale.startsWith('fr')))
+        .slice(0, 4)
+        .map(x => ({ url: x.provider === 'twitch' ? `https://www.twitch.tv/${x.parameter}` : `https://www.youtube.com/watch?v=${x.parameter}`, label: `${x.provider === 'twitch' ? 'Twitch' : 'YouTube'} · ${x.locale}` }));
+      return { data: { match, games, quality: checkMatch(match, games), streams }, fetchedAt: r.fetchedAt, stale: r.stale };
     },
 
     async competitions(o: Opts) {

@@ -9,6 +9,7 @@
 |---|---|
 | `esports-api.lolesports.com`, `feed.lolesports.com` | identifiants de ligues, matchs, parties |
 | `esports-api.service.valorantesports.com` | idem pour VALORANT |
+| `lol.fandom.com` (Leaguepedia) | noms des deux équipes et date d'un match LoL ouvert |
 | `api.opendota.com` | identifiants de matchs, équipes, ligues, joueurs |
 | `static.lolesports.com`, `ddragon.leagueoflegends.com`, CDN Steam | images (logos, champions, héros, objets), sans référent |
 

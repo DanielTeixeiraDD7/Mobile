@@ -32,6 +32,8 @@ export interface GetOptions {
   maxWait?: number;
   /** Ne pas écrire en cache (données en direct volumineuses). */
   noStore?: boolean;
+  /** Vérifie la réponse avant mise en cache (erreur « en 200 » de certaines API) ; lève une ApiError sinon. */
+  validate?: (data: unknown, p: ProviderConfig) => void;
 }
 
 export interface HttpResult<T> {
@@ -134,6 +136,7 @@ export class Http {
       s.requests++;
       try {
         const data = await this.once<T>(p, path, o.signal);
+        o.validate?.(data, p);
         const at = this.now();
         s.lastOk = at;
         if (!o.noStore) await this.cache?.put(key, data, at).catch(() => {});
@@ -141,6 +144,7 @@ export class Http {
       } catch (e) {
         if (isAbort(e)) throw new ApiError('aborted', 'annulée');
         const err = e instanceof ApiError ? e : new ApiError('http', String(e), 0, p.name);
+        if (err.kind === 'rate_limited' && err.retryAfter) this.limiter(p).block(err.retryAfter);
         s.errors++;
         s.lastError = err.kind;
         const retryable = err.kind === 'offline' || err.kind === 'unavailable';

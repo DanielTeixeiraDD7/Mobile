@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { MatchDetail } from '../core/adapter';
-import { headToHead, summarizeSeries } from '../core/analysis';
+import { headToHead, summarizeSeries, teamForm } from '../core/analysis';
 import type { Fetched, Match } from '../core/model';
-import { checkMatch } from '../core/quality';
+import { checkMatch, validateInferredWinners } from '../core/quality';
+import { lpMatchGames, type LpGame } from '../providers/leaguepedia';
 import { knownMatch, knownMatches } from '../data/feed';
 import { markViewed, useStore } from '../data/store';
 import { DEFS } from '../games/defs';
@@ -41,7 +42,28 @@ export function MatchScreen({ id }: { id: string }) {
 
   useEffect(() => { if (match && detail) void markViewed(match); }, [match?.id, !!detail]); // eslint-disable-line react-hooks/exhaustive-deps
   const [tab, setTab] = useState<'summary' | number>('summary');
-  const games = detail?.data.games ?? [];
+
+  // LoL : vainqueur officiel par partie et draft depuis Leaguepedia (noms d'équipes exacts + date).
+  const teamsKnown = match?.sides[0].team && match.sides[1].team && match.startTime !== null;
+  const lp = useResource<LpGame[]>(game === 'lol' && teamsKnown && match!.status !== 'upcoming' ? `lp:${id}` : null,
+    o => lpMatchGames([match!.sides[0].team!.name, match!.sides[1].team!.name], match!.startTime!, { ...o, finished: match!.status === 'finished' }));
+  const lpByNumber = useMemo(() => new Map((lp.data ?? []).map(g => [g.number, g])), [lp.data]);
+  const rawGames = detail?.data.games ?? [];
+  const games = useMemo(() => {
+    if (!match || !lp.data?.length) return rawGames;
+    const idx = (name: string) => match.sides.findIndex(s => s.team?.name === name);
+    const official = rawGames.map(g => {
+      const l = lpByNumber.get(g.number);
+      if (!l || !l.winner || g.status !== 'finished') return null;
+      const i = idx(l.winner === 'blue' ? l.blue : l.red);
+      return i === 0 || i === 1 ? (i as 0 | 1) : null;
+    });
+    const played = rawGames.filter(g => g.status === 'finished');
+    const checked = validateInferredWinners([match.sides[0].score, match.sides[1].score], official.filter((_, i) => rawGames[i]!.status === 'finished'));
+    let k = 0;
+    return rawGames.map(g => (g.status === 'finished' && played.length ? { ...g, winner: checked[k++] ?? null } : g));
+  }, [rawGames, lp.data, lpByNumber, match]);
+  const officialWinners = games.some(g => g.winner !== null) && game === 'lol';
   const Panel = GAME_PANELS[game];
   const h2h = useMemo(() => (match?.sides[0].team && match.sides[1].team ? headToHead(match.sides[0].team.id, match.sides[1].team.id, knownMatches()).filter(m => m.id !== id) : []), [match, id]);
 
@@ -86,6 +108,12 @@ export function MatchScreen({ id }: { id: string }) {
         </div>
       </section>
 
+      {match.status === 'live' && (detail?.data.streams?.length ?? 0) > 0 && (
+        <div className="row wrap" style={{ gap: 6, marginTop: 10, justifyContent: 'center' }}>
+          {detail!.data.streams!.map(v => <a key={v.url} className="btn small" href={v.url} target="_blank" rel="noopener noreferrer"><Icon name="play" /> {v.label}</a>)}
+        </div>
+      )}
+
       {games.length > 0 && (
         <div className="tabs" role="tablist" aria-label={`${word}s`}>
           <button type="button" role="tab" aria-selected={tab === 'summary'} onClick={() => setTab('summary')}>Résumé</button>
@@ -100,7 +128,7 @@ export function MatchScreen({ id }: { id: string }) {
       )}
 
       {tab !== 'summary' && games[tab] && Panel ? (
-        <Panel match={match} game={games[tab]!} />
+        <Panel match={match} game={games[tab]!} lp={lpByNumber.get(games[tab]!.number) ?? null} />
       ) : (
         <div className="stack" style={{ marginTop: 14 }}>
           <Analysis lines={summarizeSeries(match)} title="Résumé" />
@@ -127,9 +155,13 @@ export function MatchScreen({ id }: { id: string }) {
                   </li>
                 ))}
               </ul>
-              {game === 'lol' && <p className="tiny dim" style={{ marginBottom: 0 }}>Vainqueur de chaque partie non publié par la source : ouvre une partie pour voir le vainqueur déduit de l'état final.</p>}
+              {game === 'lol' && (officialWinners
+                ? <p className="tiny dim" style={{ marginBottom: 0 }}>Vainqueurs par partie et drafts : Leaguepedia (CC BY-SA), rapprochés par noms d'équipes exacts et date, vérifiés contre le score.</p>
+                : <p className="tiny dim" style={{ marginBottom: 0 }}>{lp.loading ? 'Recherche des vainqueurs par partie sur Leaguepedia…' : `Vainqueur par partie non publié par lolesports${lp.error ? ` et Leaguepedia indisponible (${lp.error})` : lp.data ? ' ni trouvé sur Leaguepedia (noms d\'équipes différents ?)' : ''} : ouvre une partie pour voir le vainqueur déduit de l'état final.`}</p>)}
             </div>
           )}
+
+          {a.team && b.team && <FormCompare a={a.team} b={b.team} />}
 
           {h2h.length > 0 && (
             <>
@@ -159,3 +191,23 @@ export function MatchScreen({ id }: { id: string }) {
   );
 }
 
+
+function FormCompare({ a, b }: { a: NonNullable<Match['sides'][0]['team']>; b: NonNullable<Match['sides'][0]['team']> }) {
+  const all = knownMatches();
+  const fa = teamForm(a.id, all), fb = teamForm(b.id, all);
+  if (!fa.played && !fb.played) return null;
+  const row = (name: string, f: typeof fa) => (
+    <div className="row" style={{ justifyContent: 'space-between', padding: '6px 0' }}>
+      <strong className="ellipsis grow">{name}</strong>
+      <span className="form">{f.last.slice(0, 5).map((x, i) => <span key={i} className={x}>{x === 'W' ? 'V' : 'D'}</span>)}</span>
+      <span className="num small muted" style={{ minWidth: 64, textAlign: 'right' }}>{f.played ? `${f.wins}V-${f.losses}D` : '—'}</span>
+    </div>
+  );
+  return (
+    <div className="card small">
+      <p className="label" style={{ marginTop: 0 }}>Forme récente <span className="tag computed">calculé</span></p>
+      {row(a.name, fa)}{row(b.name, fb)}
+      <p className="tiny dim" style={{ marginBottom: 0 }}>5 derniers résultats parmi les matchs chargés dans l'app (plus récent à gauche). Pas une prédiction.</p>
+    </div>
+  );
+}

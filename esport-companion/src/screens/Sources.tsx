@@ -7,6 +7,7 @@ import { COVERAGE_LABEL, DEFS } from '../games/defs';
 import { OPENDOTA } from '../providers/opendota';
 import { LOL_FEED } from '../providers/lolLivestats';
 import { LOL_GW, VAL_GW } from '../providers/riot';
+import { LEAGUEPEDIA } from '../providers/leaguepedia';
 import { goBack } from '../router';
 import { TopBar } from '../ui/common';
 import { relative } from '../ui/format';
@@ -15,6 +16,7 @@ import { toast } from '../ui/toast';
 const ACTIVE = [
   { p: LOL_GW, games: 'League of Legends', kind: 'Officielle, non documentée', key: 'Aucune (clé publique du site lolesports.com)', doc: 'https://lolesports.com', terms: 'API du site officiel, non publiée : peut changer sans préavis. Usage personnel.' },
   { p: LOL_FEED, games: 'League of Legends', kind: 'Officielle, non documentée', key: 'Aucune', doc: 'https://lolesports.com', terms: 'Flux des statistiques en jeu (images ~10 s). Chargé uniquement à l\'ouverture d\'une partie.' },
+  { p: LEAGUEPEDIA, games: 'League of Legends (complément)', kind: 'Communautaire (wiki, CC BY-SA 3.0)', key: 'Aucune', doc: 'https://lol.fandom.com/wiki/Help:Leaguepedia_API', terms: "Vainqueur officiel par partie et draft. Limite anonyme stricte : 1 requête par match ouvert, cache 30 jours. Rapprochement par noms d'équipes exacts + date." },
   { p: VAL_GW, games: 'VALORANT', kind: 'Officielle, non documentée', key: 'Aucune (clé publique du site valorantesports.com)', doc: 'https://valorantesports.com', terms: 'Résultats et calendrier seulement.' },
   { p: OPENDOTA, games: 'Dota 2', kind: 'Communautaire (open source)', key: 'Aucune — offre gratuite 60 req/min, 3 000/jour', doc: 'https://docs.opendota.com', terms: "La clé payante n'est jamais utilisée. Attribution : OpenDota." },
 ];

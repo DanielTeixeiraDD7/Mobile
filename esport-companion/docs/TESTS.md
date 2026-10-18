@@ -1,12 +1,12 @@
 # Tests — exécutés le 18/10/2026
 
 ```bash
-npm test            # 55 tests unitaires et d'intégration (jsdom + fake-indexeddb), données FICTIVES
+npm test            # 59 tests unitaires et d'intégration (jsdom + fake-indexeddb), données FICTIVES
 npm run test:live   # 3 tests contre les API réelles
 npm run typecheck   # TypeScript strict, 0 erreur
 ```
 
-Résultats : **55/55 réussis** (3 exécutions consécutives sans échec), **3/3 tests réels réussis**, typecheck et build OK.
+Résultats : **59/59 réussis** (3 exécutions consécutives sans échec), **3/3 tests réels réussis**, typecheck et build OK.
 
 ## Tests unitaires (`tests/`)
 
@@ -17,6 +17,7 @@ Données de test : `tests/fixtures/fake.ts`, équipes « Test Alpha / Test Beta 
 | `http.test.ts` | cache frais, **déduplication** des requêtes simultanées, **réessais 5xx** avec attente croissante, **données périmées** si le réseau tombe, **429 + Retry-After**, limite par minute, **quota journalier**, 404 sans données périmées, hors-ligne, JSON invalide, annulation, données définitives jamais rechargées |
 | `providers.test.ts` | normalisation Riot (scores, vainqueurs, TBD → null, https, phases, émissions ignorées), parties et VOD, classements et liens de bracket ; livestats : arrondi de l'heure, stats finales, objets null si non publiés, **vainqueur déduit uniquement si tours ET gold concordent**, objectifs par intervalle, **rejeu complet d'une partie** avec un client simulé ; OpenDota : **séries reconstituées** (changement de côté), série incomplète = statut inconnu, direct, BO2 nul, bâtiments détruits |
 | `core.test.ts` | contrôles qualité (score/format, vainqueur, même équipe, nombre de parties, durée impossible), doublons par identifiant uniquement, validation des vainqueurs déduits ; filtres, tri, tableau de bord, favoris, bracket ; analyse (avances, changements de leader, remontée = interprétation, vainqueur déduit jamais présenté comme fait, aucune prédiction) ; forme, confrontations ; CSV (export BOM, échappement, import avec erreurs par ligne, alias de colonnes, identifiant stable, doublon probable) ; sauvegarde (aller-retour, rejets, fusion) ; `.ics` ; formats (temps négatif) |
+| `leaguepedia.test.ts` | ordre réel de la draft de tournoi, requête par noms exacts échappés, erreur « ratelimited » en HTTP 200 (rien en cache, pause), **draft gardée/inversée/écartée selon les champions du flux officiel** |
 | `store.test.ts` | favoris, réglages (transmis aux adaptateurs), historique borné, imports, cache IndexedDB |
 | `app.test.tsx` | rendu complet avec adaptateurs fictifs : présentation → accueil (direct, à venir), **une source en panne n'empêche pas l'affichage des autres**, adversaire inconnu affiché « À déterminer », fiche de match, favoris vides |
 

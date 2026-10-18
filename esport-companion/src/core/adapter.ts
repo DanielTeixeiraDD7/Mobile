@@ -1,4 +1,4 @@
-import type { Competition, CompetitionDetail, Fetched, Match, MatchGame, Team } from './model';
+import type { Competition, CompetitionDetail, Fetched, Match, MatchGame, Team, Vod } from './model';
 import type { QualityIssue } from './quality';
 
 export type CoverageLevel = 'deep' | 'partial' | 'key' | 'none';
@@ -25,6 +25,8 @@ export interface MatchDetail {
   match: Match;
   games: MatchGame[];
   quality: QualityIssue[];
+  /** Diffusions officielles en cours (si publiées). */
+  streams?: Vod[];
 }
 
 /** Interface que chaque jeu implémente. Une méthode absente = donnée non disponible pour ce jeu. */

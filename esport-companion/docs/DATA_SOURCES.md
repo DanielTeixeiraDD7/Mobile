@@ -30,6 +30,13 @@ Tests réels depuis l'environnement de développement :
 - Limites : non publiées. L'app espace ses appels (≤ 20 req/min), met tout en cache, et ne télécharge les images d'une partie qu'à l'ouverture de sa fiche.
 - Usage retenu : **personnel, non commercial**.
 
+### 1 bis. Leaguepedia (lol.fandom.com, Cargo) — complément LoL ✅
+
+- URL : `https://lol.fandom.com/api.php?action=cargoquery&origin=*` — CORS `*` vérifié. Contenu **CC BY-SA 3.0** (attribution affichée).
+- Rôle : **vainqueur officiel de chaque partie** et **draft complète dans l'ordre** (tables `MatchSchedule`, `MatchScheduleGame`, `PicksAndBansS7`). Vérifié sur MVK–FURIA (Worlds 2026) : 4 parties, vainqueurs 1-1-2-1.
+- Rapprochement avec lolesports : **noms d'équipes exacts** + date ±18 h, puis contrôle contre le score de la série. Aucun rapprochement approximatif.
+- Limite : stricte pour les requêtes anonymes. L'IP partagée du serveur de test a été limitée après 3 requêtes. L'app fait 1 requête par match ouvert, garde le résultat 30 jours, détecte l'erreur `ratelimited` (renvoyée en HTTP 200) et se met en pause. En cas d'échec, la fiche garde le vainqueur déduit.
+
 ### 2. Riot VALORANT Esports — même passerelle ✅ (partiel)
 
 - URL : `https://esports-api.service.valorantesports.com/persisted/val/*` (même clé publique, `sport=val`). CORS `*` vérifié.
@@ -62,7 +69,6 @@ Tests réels depuis l'environnement de développement :
 | **PandaScore** | CS2, R6, Rocket League, Overwatch, CoD, PUBG, LoL, Dota, Valorant… | Offre **gratuite sans carte**, mais : compte et jeton obligatoires (je ne peux pas créer de compte pour toi) ; seulement calendrier, avant-match et équipes/joueurs à 1 000 req/h ; **résultats détaillés et stats payants (dès 400 €/mois/jeu)**. CORS non vérifiable sans jeton. → connecteur optionnel prévu, voir API_SETUP.md |
 | **Liquipedia MediaWiki API** | tous | Gratuit, CC BY-SA, mais exige un **User-Agent personnalisé**, impossible à fixer depuis un navigateur, et 1 req / 2 s. Inutilisable légalement depuis une PWA ; possible via un script local (ROADMAP) |
 | **LiquipediaDB API** | tous | Clé sur **approbation** (60 req/h). Non demandée |
-| **Leaguepedia (lol.fandom.com, Cargo)** | LoL | CORS `*`, CC BY-SA, mais l'IP du serveur de test était limitée (`ratelimited`) : non vérifiable ici. Enrichissement possible plus tard |
 | **octane.gg** | Rocket League | API `zsr.octane.gg` **injoignable** (site hors service) |
 | **vlr.gg** et API tierces (vlr.orlandomm.net…) | VALORANT | Pas d'API officielle : ce sont des scrapers du site vlr.gg sans autorisation publiée → **exclus** (règle anti-scraping). `vlrggapi.vercel.app` : déploiement désactivé (HTTP 402) |
 | **HLTV** | CS2 | Pas d'API, scraping interdit → exclu |
