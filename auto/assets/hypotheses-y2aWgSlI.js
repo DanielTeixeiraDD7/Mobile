@@ -1,0 +1,1 @@
+import{C as e,H as t,K as n,o as r,s as i}from"./index-DvxDbrLs.js";import{t as a}from"./import-BJn4CIji.js";var o=`autoradar:hypotheses`,s=e(`hypotheses`,()=>{let e=n({...a,...i(o,{})});return t(e,e=>r(o,e),{deep:!0}),{valeurs:e,reinitialiser:()=>{e.value={...a}}}});export{s as t};

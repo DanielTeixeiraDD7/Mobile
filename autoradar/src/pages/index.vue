@@ -24,6 +24,7 @@ const pastilles = computed(() => {
 });
 const ordrePays: Pays[] = ['PT', 'FR', 'DE', 'BE'];
 const pays = computed(() => ordrePays.filter(p => active.value.pays.includes(p)));
+const drapeaux = computed(() => pays.value.map(p => DRAPEAU[p]).join(' '));
 const nbSites = computed(() => pays.value.reduce((n, p) => n + sitesDuPays(p).length, 0));
 
 // Édition dans un panneau : on travaille sur une copie, appliquée à l'enregistrement.
@@ -59,10 +60,10 @@ function enregistrer() {
         </div>
       </div>
       <h1>{{ active.nom }}</h1>
-      <p class="model">{{ nomModele(active.criteres.modele) }} · {{ nbSites }} sites dans {{ pays.length }} pays</p>
+      <p class="model"><template v-if="active.nom !== nomModele(active.criteres.modele)">{{ nomModele(active.criteres.modele) }} · </template>{{ nbSites }} sites dans {{ pays.length }} pays</p>
       <div class="chips">
         <span v-for="p in pastilles" :key="p.texte" class="hchip"><i :class="p.icon" /> {{ p.texte }}</span>
-        <span class="hchip">{{ pays.map(p => DRAPEAU[p]).join(' ') }}</span>
+        <span class="hchip">{{ drapeaux }}</span>
       </div>
       <div class="flex gap-2 flex-wrap mt-3">
         <Button label="Modifier" icon="pi pi-sliders-h" class="hero-btn" @click="ouvrir('modifier')" />

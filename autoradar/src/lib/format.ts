@@ -1,7 +1,10 @@
 const eur = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
 const nb = new Intl.NumberFormat('fr-FR');
 
+const eurCts = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 export const euros = (n: number | null | undefined) => (n == null || !Number.isFinite(n) ? '—' : eur.format(n));
+/** Montant au centime près quand il n'est pas rond (frais officiels : 93,52 €). */
+export const eurosPrecis = (n: number | null | undefined) => (n == null || !Number.isFinite(n) ? '—' : Number.isInteger(n) ? eur.format(n) : eurCts.format(n));
 export const kms = (n: number | null | undefined) => (n == null ? '—' : `${nb.format(n)} km`);
 export const nombre = (n: number | null | undefined) => (n == null ? '—' : nb.format(n));
 export const dateCourte = (ms: number) => new Date(ms).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });

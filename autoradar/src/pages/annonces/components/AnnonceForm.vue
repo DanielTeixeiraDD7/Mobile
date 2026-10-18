@@ -44,7 +44,7 @@ const ouiNon = [{ label: 'Oui', value: true }, { label: 'Non', value: false }, {
     </div>
     <div class="field">
       <label for="af-bat">Batterie (kWh brut)</label>
-      <Select input-id="af-bat" v-model="a.batterieKwh" :options="[{ l: 'Inconnue', v: null }, { l: '50 kWh', v: 50 }, { l: '54 kWh', v: 54 }]" option-label="l" option-value="v" />
+      <Select input-id="af-bat" v-model="a.batterieKwh" :options="[{ l: '50 kWh (100 kW)', v: 50 }, { l: '54 kWh (115 kW)', v: 54 }]" option-label="l" option-value="v" placeholder="Inconnue" show-clear />
     </div>
     <div class="field">
       <label for="af-soh">État batterie (SoH)</label>

@@ -5,7 +5,7 @@ import { DRAPEAU, NOM_PAYS, STATUTS } from '@/lib/types';
 import { SITES } from '@/lib/sites';
 import { calculer } from '@/lib/import';
 import { VERIFS_ANNONCE } from '@/data/guide';
-import { euros, kms, dateCourte } from '@/lib/format';
+import { euros, eurosPrecis, kms, dateCourte } from '@/lib/format';
 import { useAnnoncesStore } from '@/stores/annonces';
 import { useHypothesesStore } from '@/stores/hypotheses';
 import { useReglagesStore } from '@/stores/reglages';
@@ -78,7 +78,7 @@ function supprimer() {
           <ul class="lignes">
             <li v-for="l in cout.lignes" :key="l.libelle">
               <span class="grow">{{ l.libelle }}<small v-if="l.note" class="dim block">{{ l.note }}</small></span>
-              <b :class="{ est: l.estimation }">{{ l.montant === 0 ? '0 €' : euros(l.montant) }}</b>
+              <b :class="{ est: l.estimation }">{{ eurosPrecis(l.montant) }}</b>
             </li>
           </ul>
           <div v-for="al in cout.alertes" :key="al" class="callout warn mt-2"><i class="pi pi-exclamation-triangle" /><p>{{ al }}</p></div>
