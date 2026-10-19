@@ -16,6 +16,7 @@ import Icone from '@/components/Icone.vue';
 import Affiche from '@/components/Affiche.vue';
 import BadgeType from '@/components/BadgeType.vue';
 import CarteMedia from '@/components/CarteMedia.vue';
+import OuRegarder from '@/components/OuRegarder.vue';
 import Feuille from '@/components/Feuille.vue';
 
 const route = useRoute();
@@ -258,6 +259,8 @@ const retour = () => (window.history.state?.back ? router.back() : router.push('
         <p class="synopsis" :class="{ clamp4: !ouvertSynopsis }">{{ fiche.description }}</p>
         <button v-if="fiche.description.length > 240" type="button" class="lien small" @click="ouvertSynopsis = !ouvertSynopsis">{{ ouvertSynopsis ? 'Réduire' : 'Lire la suite' }}</button>
       </section>
+
+      <OuRegarder v-if="!aVenir" :media="media" :liens="fiche?.liens" />
 
       <section v-if="fiche?.recommendations.length" class="section">
         <div class="section-head"><h2>Dans le même genre</h2></div>

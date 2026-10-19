@@ -59,6 +59,8 @@ export const TTL = {
 export interface MediaDetails {
   media: MediaSnapshot;
   description: string;
+  /** Sites officiels de visionnage / lecture (AniList, non liés à un pays). */
+  liens?: { site: string; url: string; langue: string | null; couleur: string | null }[];
   recommendations: { rating: number; media: MediaSnapshot }[];
 }
 
@@ -155,13 +157,16 @@ export class AniListClient {
   }
 
   details(id: number, signal?: AbortSignal, force = false) {
-    return this.cached<MediaDetails>(`media:${id}`, TTL.media, async () => {
-      const d = await this.request<{ Media: RawMedia & { description: string | null; recommendations: { nodes: ({ rating: number | null; mediaRecommendation: RawMedia | null } | null)[] } | null } }>(
+    return this.cached<MediaDetails>(`media:v2:${id}`, TTL.media, async () => {
+      const d = await this.request<{ Media: RawMedia & { description: string | null; externalLinks?: { site: string; url: string; type: string; language: string | null; isDisabled: boolean | null; color: string | null }[] | null; recommendations: { nodes: ({ rating: number | null; mediaRecommendation: RawMedia | null } | null)[] } | null } }>(
         MEDIA_QUERY, { id }, signal);
       const m = d.Media;
       return {
         media: toSnapshot(m, this.now()),
         description: plainText(m.description),
+        // Certains liens AniList sont en http:// : passés en https (les sites concernés le servent tous).
+        liens: (m.externalLinks ?? []).filter(l => l.type === 'STREAMING' && !l.isDisabled && /^https?:\/\//.test(l.url))
+          .map(l => ({ site: l.site, url: l.url.replace(/^http:/, 'https:'), langue: l.language, couleur: l.color })),
         recommendations: (m.recommendations?.nodes ?? [])
           .filter((n): n is { rating: number | null; mediaRecommendation: RawMedia } => !!n?.mediaRecommendation && !n.mediaRecommendation.isAdult)
           .map(n => ({ rating: n.rating ?? 0, media: toSnapshot(n.mediaRecommendation, this.now()) })),

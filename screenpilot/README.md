@@ -36,6 +36,13 @@ Les titres **pas encore sortis** (date de sortie future) n'apparaissent que dans
 
 « Pour toi » apparaît dès le premier titre de la catégorie (même « à voir ») : recommandations TMDB / AniList de tes titres + listes du pays, classées selon tes genres.
 
+## Où regarder / où lire
+
+Sur chaque fiche, par pays (le tien par défaut, les autres en un geste pour comparer avec un ami) — `src/lib/streaming.ts` :
+- films et séries : plateformes JustWatch via l'API TMDB (`watch/providers`) : abonnement, gratuit, location, achat ;
+- anime : l'anime AniList est retrouvé dans TMDB (titre japonais, titre, année, popularité ; les saisons tombent sur la série), puis même chose ; sinon sites officiels AniList ;
+- manga : sites de lecture officiels AniList, dans la langue du pays d'abord.
+
 ## Sources
 
 - Films / séries : API TMDB v3 (clé publique de lecture, usage **non commercial**, attribution dans Réglages).

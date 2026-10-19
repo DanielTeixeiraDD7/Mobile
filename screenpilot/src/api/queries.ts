@@ -23,6 +23,7 @@ query Media($id: Int!) {
   Media(id: $id) {
     ${MEDIA_FIELDS}
     description(asHtml: false)
+    externalLinks { site url type language isDisabled color }
     recommendations(sort: RATING_DESC, perPage: 12) {
       nodes { rating mediaRecommendation { ${MEDIA_FIELDS} } }
     }

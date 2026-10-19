@@ -11,7 +11,7 @@ const chemin = (t: TmdbType) => (t === 'MOVIE' ? 'movie' : 'tv');
 interface RawResult {
   id: number; media_type?: string; adult?: boolean; title?: string; name?: string; original_title?: string; original_name?: string;
   poster_path?: string | null; release_date?: string; first_air_date?: string; vote_average?: number; overview?: string;
-  genre_ids?: number[]; original_language?: string;
+  genre_ids?: number[]; original_language?: string; popularity?: number;
 }
 export interface RawMovie extends RawResult {
   runtime: number | null; status: string; genres: { id: number; name: string }[];
@@ -78,6 +78,14 @@ export function toSnapshot(r: RawResult & Partial<RawMovie & RawTv>, type: TmdbT
     }),
   };
 }
+
+/** Plateformes d'un titre dans un pays (données JustWatch, via TMDB). */
+export interface Plateforme { id: number; nom: string; logo: string | null }
+export interface Disponibilite { lien: string | null; abonnement: Plateforme[]; gratuit: Plateforme[]; location: Plateforme[]; achat: Plateforme[] }
+type RawFournisseur = { provider_id: number; provider_name: string; logo_path: string | null; display_priority?: number };
+const LOGO = 'https://image.tmdb.org/t/p/w92';
+const plateformes = (l?: RawFournisseur[]) => (l ?? []).sort((a, b) => (a.display_priority ?? 99) - (b.display_priority ?? 99))
+  .map(p => ({ id: p.provider_id, nom: p.provider_name, logo: p.logo_path ? LOGO + p.logo_path : null }));
 
 export interface TmdbDetails {
   media: MediaSnapshot;
@@ -154,6 +162,57 @@ export class TmdbClient {
           .map(x => ({ rating: Math.round((x.vote_average ?? 0) * 10), media: toSnapshot(x, type, this.now()) })),
       };
     }, force);
+  }
+
+  /** Où regarder, pays par pays (seuls les pays proposés par l'app sont gardés). */
+  disponibilites(type: TmdbType, id: number, pays: readonly string[], signal?: AbortSignal) {
+    return this.cached<Record<string, Disponibilite>>(`tmdb:dispo:${type}:${id}`, TTL.media, async () => {
+      const d = await this.request<{ results: Record<string, { link?: string; flatrate?: RawFournisseur[]; free?: RawFournisseur[]; ads?: RawFournisseur[]; rent?: RawFournisseur[]; buy?: RawFournisseur[] }> }>(`${chemin(type)}/${id}/watch/providers`, {}, signal);
+      const out: Record<string, Disponibilite> = {};
+      for (const p of pays) {
+        const r = d.results?.[p];
+        if (!r) continue;
+        out[p] = { lien: r.link ?? null, abonnement: plateformes(r.flatrate), gratuit: plateformes([...(r.free ?? []), ...(r.ads ?? [])]), location: plateformes(r.rent), achat: plateformes(r.buy) };
+      }
+      return out;
+    });
+  }
+
+  /**
+   * Retrouve un anime AniList dans TMDB (où sont les disponibilités par pays), par score :
+   * titre japonais identique, titre proche, même année (à un an près), popularité. Rien si aucun titre ne colle.
+   * Les saisons 2, 3… d'AniList tombent sur la série TMDB (qui regroupe toutes les saisons).
+   */
+  trouverAnime(m: Pick<MediaSnapshot, 'id' | 'format' | 'title' | 'startYear'>, signal?: AbortSignal) {
+    const film = m.format === 'MOVIE';
+    const norm = (t: string | null | undefined) => (t ?? '').normalize('NFKC').toLowerCase().replace(/[\s:：!！?？.,'’\-–—]+/g, '');
+    const natif = norm(m.title.native);
+    const autres = [m.title.english, m.title.romaji].map(norm).filter(Boolean);
+    const score = (r: RawResult) => {
+      const noms = [film ? r.title : r.name, film ? r.original_title : r.original_name].map(norm).filter(Boolean);
+      let s = 0;
+      if (natif && noms.includes(natif)) s += 10;
+      else if (natif && noms.some(n => natif.startsWith(n) || n.startsWith(natif))) s += 5;
+      if (noms.some(n => autres.includes(n))) s += 6;
+      else if (noms.some(n => autres.some(a => a.startsWith(n) || n.startsWith(a)))) s += 3;
+      const an = annee(film ? r.release_date : r.first_air_date);
+      if (m.startYear && an && Math.abs(an - m.startYear) <= 1) s += 3;
+      return s + Math.min(2, Math.log10(1 + (r.popularity ?? 0)));
+    };
+    return this.cached<{ id: number; nom: string } | null>(`tmdb:anime:v2:${m.id}`, 7 * TTL.media, async () => {
+      const requetes = [...new Set([m.title.native, m.title.english, m.title.romaji].filter((t): t is string => !!t))];
+      let meilleur: { r: RawResult; s: number } | null = null;
+      for (const q of requetes) {
+        const d = await this.request<{ results: RawResult[] }>(`search/${film ? 'movie' : 'tv'}`, { query: q, include_adult: 'false' }, signal);
+        for (const r of d.results.filter(estAnimeJaponais)) {
+          const s = score(r);
+          if (!meilleur || s > meilleur.s) meilleur = { r, s };
+        }
+        if (meilleur && meilleur.s >= 13) break; // titre japonais exact + année : inutile de chercher plus
+      }
+      if (!meilleur || meilleur.s < 5) return null;
+      return { id: meilleur.r.id, nom: (film ? meilleur.r.title : meilleur.r.name) ?? '' };
+    });
   }
 
   trending(type: TmdbType, signal?: AbortSignal) {

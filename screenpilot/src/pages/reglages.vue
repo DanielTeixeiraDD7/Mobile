@@ -14,7 +14,7 @@ import { confirmer } from '@/composables/useConfirm';
 const biblio = useBiblio();
 const router = useRouter();
 const maj = (p: Partial<Settings>) => store.updateSettings(p);
-const VERSION = '2.3.0';
+const VERSION = '2.4.0';
 const val = (e: Event) => (e.target as HTMLSelectElement).value;
 
 // Compte et partage

@@ -7,6 +7,8 @@ export interface Fiche {
   media: MediaSnapshot;
   description: string;
   recommendations: { rating: number; media: MediaSnapshot }[];
+  /** Anime / manga : sites officiels (AniList). */
+  liens?: { site: string; url: string; langue: string | null; couleur: string | null }[];
 }
 
 export function details(type: MediaType, id: number, signal?: AbortSignal, force = false) {
