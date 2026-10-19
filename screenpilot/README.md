@@ -57,6 +57,17 @@ npm run build      # vue-tsc + build vers ../anime (servi par GitHub Pages)
 - `src/api/` : clients AniList et TMDB (limitation de débit, cache, repli hors-ligne).
 - `src/pages/` : routes (Accueil, Bibliothèque, Recherche, Fiche, Temps, Calendrier, Profil, Données, Réglages).
 
-## Phase 2 (prévue)
+## Comptes et amis (facultatif)
 
-Compte facultatif (Supabase), amis par code, classement hebdomadaire, titres en commun. Privé par défaut.
+Supabase (projet `iyefzfmvqrlbgvqshjqc`, clé *publishable* dans `src/config.ts`, jamais de clé secrète).
+Sans compte, rien n'est chargé ni envoyé (la bibliothèque Supabase n'est téléchargée qu'à l'ouverture de la page Amis).
+
+- Inscription email + mot de passe, pseudo, code ami `ABCD-1234` et lien d'invitation (`#/amis?code=…`).
+- Demande → acceptation ; classement de la semaine (total, par catégorie ; manga en chapitres).
+- Fiche ami : semaine jour par jour, comparaison, en ce moment, titres en commun, compatibilité, titres adorés.
+- Partage réglable : temps d'écran (par défaut) et bibliothèque (sur option, sans notes perso). Suppression du compte en un geste.
+
+Serveur : `supabase/schema.sql` (tables, RLS, fonctions) à exécuter une fois dans le SQL Editor.
+Tests de sécurité : `supabase/tests-rls.sql` (sur une base de test locale, voir l'en-tête).
+Réglage Supabase requis : *Authentication → Sign In / Providers → Email → Confirm email* **désactivé**
+(l'envoi d'emails gratuit de Supabase est réservé aux membres du projet).

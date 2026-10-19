@@ -11,6 +11,10 @@ import Icone from '@/components/Icone.vue';
 import LigneTitre from '@/components/LigneTitre.vue';
 import CarteMedia from '@/components/CarteMedia.vue';
 import Catalogue from '@/components/Catalogue.vue';
+import Avatar from '@/components/Avatar.vue';
+import { useSocial } from '@/stores/social';
+import { classement } from '@/domain/classement';
+import { jourLocal } from '@/lib/social';
 import Affiche from '@/components/Affiche.vue';
 import BarresTemps from '@/components/graph/BarresTemps.vue';
 
@@ -33,6 +37,16 @@ const tranches = computed(() => semaine.value.tranches.map((t, i) => ({
   libelle: 'LMMJVSD'[i]!, parType: t.parType, total: t.minutes,
   actif: Date.now() >= t.debut && Date.now() < t.debut + 86_400_000,
 })));
+// Classement entre amis (si compte et amis).
+const social = useSocial();
+const monRang = computed(() => {
+  const p = social.profil;
+  if (social.etat !== 'connecte' || !p || !social.reseau.amis.length) return null;
+  const { debut, fin } = bornes('semaine', new Date());
+  const r = classement(social.stats, [p, ...social.reseau.amis], p.id, jourLocal(debut.getTime()), jourLocal(fin.getTime())).filter(x => x.partage);
+  const i = r.findIndex(x => x.moi);
+  return { rang: i + 1, sur: r.length, premier: r[0]! };
+});
 const serieJours = computed(() => serie(biblio.sessionsVues));
 
 const enCours = computed(() => biblio.entries
@@ -106,6 +120,16 @@ const titre = (m: MediaSnapshot) => mediaTitle(m, biblio.settings.titleLanguage)
         <span v-if="!semaine.total && !semaine.unites.MANGA" class="dim">Appuie sur + quand tu finis un épisode : ton temps se calcule tout seul.</span>
       </div>
     </router-link>
+
+    <router-link v-if="monRang" to="/amis" class="card rang">
+      <Avatar :pseudo="monRang.premier.personne.pseudo" :couleur="monRang.premier.personne.couleur" :taille="34" />
+      <span class="grow">
+        <b>{{ monRang.rang === 1 ? 'Tu es en tête cette semaine' : `Tu es ${monRang.rang}ᵉ sur ${monRang.sur} cette semaine` }}</b>
+        <small class="muted">{{ monRang.rang === 1 ? 'Classement entre amis' : `${monRang.premier.personne.pseudo} mène avec ${duree(monRang.premier.valeur)}` }}{{ social.reseau.recues.length ? ` · ${social.reseau.recues.length} demande(s) d’ami` : '' }}</small>
+      </span>
+      <Icone nom="droite" :taille="18" class="dim" />
+    </router-link>
+    <router-link v-else-if="social.reseau.recues.length" to="/amis" class="card rang"><Icone nom="personnes" /><b class="grow">{{ social.reseau.recues.length }} demande(s) d’ami</b><Icone nom="droite" :taille="18" /></router-link>
 
     <section v-if="conseils.length" class="section">
       <div class="section-head"><h2>À savoir</h2></div>
@@ -187,6 +211,9 @@ const titre = (m: MediaSnapshot) => mediaTitle(m, biblio.settings.titleLanguage)
 .types { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 12px; font-size: 12.5px; font-weight: 700; color: var(--muted); }
 .types span { display: inline-flex; align-items: center; gap: 5px; }
 .types i { width: 8px; height: 8px; border-radius: 3px; }
+.rang { display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin-top: 12px; color: inherit; text-decoration: none; }
+.rang b { display: block; font-size: 15px; }
+.rang small { display: block; font-size: 12.5px; }
 .conseils { list-style: none; margin: 0; padding: 6px 14px; }
 .conseils li { display: flex; align-items: center; gap: 12px; padding: 10px 0; font-size: 14.5px; color: var(--brand-3); }
 .conseils li + li { border-top: 1px solid var(--border); }

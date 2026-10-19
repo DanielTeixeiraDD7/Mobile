@@ -5,12 +5,34 @@ import { PAYS, type Pays, type Settings, type TitleLanguage } from '@/domain/typ
 import { NOM_PAYS, paysDe } from '@/lib/catalogue';
 import { useBiblio } from '@/stores/biblio';
 import Icone from '@/components/Icone.vue';
+import Avatar from '@/components/Avatar.vue';
+import { useSocial } from '@/stores/social';
+import { messageSocial } from '@/lib/social';
+import { toast } from '@/composables/useToast';
+import { confirmer } from '@/composables/useConfirm';
 
 const biblio = useBiblio();
 const router = useRouter();
 const maj = (p: Partial<Settings>) => store.updateSettings(p);
-const VERSION = '2.2.0';
+const VERSION = '2.3.0';
 const val = (e: Event) => (e.target as HTMLSelectElement).value;
+
+// Compte et partage
+const social = useSocial();
+onMounted(() => { if (social.etat === 'inactif') void social.demarrer(); });
+const COULEURS = ['#ff4d6d', '#ff8a3d', '#f5a524', '#22c55e', '#14b8a6', '#3b82f6', '#6366f1', '#a855f7', '#ec4899'];
+const nouveauPseudo = ref('');
+watch(() => social.profil?.pseudo, p => { nouveauPseudo.value = p ?? ''; }, { immediate: true });
+async function majCompte(p: Parameters<typeof social.majProfil>[0], message?: string) {
+  try { await social.majProfil(p); if (message) toast(message, { type: 'ok' }); } catch (e) { toast(messageSocial(e), { type: 'danger' }); }
+}
+async function deconnexion() {
+  if (await confirmer('Tes données restent sur ce téléphone. Tes amis voient encore ce qui a déjà été partagé.', { titre: 'Se déconnecter ?', ok: 'Se déconnecter', annuler: 'Rester', danger: false })) await social.deconnecter();
+}
+async function suppression() {
+  if (!(await confirmer('Ton compte, tes amitiés et tout ce que tu as partagé seront effacés du serveur. Ta bibliothèque reste sur ce téléphone.', { titre: 'Supprimer mon compte ?', ok: 'Supprimer définitivement', annuler: 'Annuler' }))) return;
+  try { await social.supprimerCompte(); toast('Compte supprimé.'); } catch (e) { toast(messageSocial(e), { type: 'danger' }); }
+}
 </script>
 
 <template>
@@ -79,6 +101,38 @@ const val = (e: Event) => (e.target as HTMLSelectElement).value;
       <router-link to="/calendrier" class="btn full">Calendrier et notifications</router-link>
     </div>
 
+    <div id="compte" class="section-head section"><h2>Compte et partage</h2></div>
+    <div v-if="social.etat === 'connecte' && social.profil" class="card pad stack">
+      <div class="row">
+        <Avatar :pseudo="social.profil.pseudo" :couleur="social.profil.couleur" :taille="46" />
+        <form class="row grow" @submit.prevent="nouveauPseudo.trim().length >= 2 && majCompte({ pseudo: nouveauPseudo.trim() }, 'Pseudo modifié.')">
+          <input v-model="nouveauPseudo" class="input grow" maxlength="24" aria-label="Pseudo">
+          <button v-if="nouveauPseudo.trim() !== social.profil.pseudo" type="submit" class="btn small primary" :disabled="nouveauPseudo.trim().length < 2">OK</button>
+        </form>
+      </div>
+      <div class="couleurs" role="radiogroup" aria-label="Couleur de l’avatar">
+        <button v-for="c in COULEURS" :key="c" type="button" role="radio" :aria-checked="social.profil.couleur === c" :aria-label="c" :class="{ on: social.profil.couleur === c }" :style="{ background: c }" @click="majCompte({ couleur: c })" />
+      </div>
+      <label class="bascule">
+        <span class="grow"><b>Partager mon temps d’écran</b><small>Total par jour et par catégorie, pour le classement.</small></span>
+        <input type="checkbox" :checked="social.profil.partage_temps" @change="majCompte({ partage_temps: ($event.target as HTMLInputElement).checked })">
+      </label>
+      <label class="bascule">
+        <span class="grow"><b>Partager ma bibliothèque</b><small>Titres, statut, progression et note /10 (jamais tes notes perso). Permet titres en commun et compatibilité.</small></span>
+        <input type="checkbox" :checked="social.profil.partage_biblio" @change="majCompte({ partage_biblio: ($event.target as HTMLInputElement).checked })">
+      </label>
+      <p class="small muted">Visible uniquement par les amis que tu as acceptés.<template v-if="social.derniereSynchro"> Dernier envoi : {{ new Date(social.derniereSynchro).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) }}.</template><template v-if="social.synchro === 'erreur'"> Envoi en échec : nouvel essai automatique.</template></p>
+      <div class="row">
+        <button type="button" class="btn grow" @click="deconnexion">Se déconnecter</button>
+        <button type="button" class="btn ghost danger grow" @click="suppression">Supprimer mon compte</button>
+      </div>
+    </div>
+    <router-link v-else to="/amis" class="card pad row compte-lien">
+      <Icone nom="personnes" />
+      <span class="grow"><b>Créer un compte (facultatif)</b><br><small class="muted">Pour te comparer à tes amis. Sans compte, rien ne quitte ton téléphone.</small></span>
+      <Icone nom="droite" :taille="18" />
+    </router-link>
+
     <div class="section-head section"><h2>À propos</h2></div>
     <div class="card pad apropos small">
       <p><b>ScreenPilot {{ VERSION }}</b> · application personnelle, gratuite, sans compte ni publicité (anciennement AnimePilot).</p>
@@ -99,6 +153,11 @@ const val = (e: Event) => (e.target as HTMLSelectElement).value;
 </route>
 
 <style scoped>
+.couleurs { display: flex; flex-wrap: wrap; gap: 10px; }
+.couleurs button { width: 30px; height: 30px; border-radius: 50%; border: 0; box-shadow: inset 0 0 0 2px rgba(255,255,255,.15); transition: transform .15s; }
+.couleurs button.on { box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--text); transform: scale(1.05); }
+.compte-lien { color: inherit; text-decoration: none; }
+.compte-lien b { font-size: 15px; }
 .bascule { display: flex; align-items: center; gap: 12px; }
 .bascule b { display: block; font-size: 15px; }
 .bascule small { display: block; color: var(--muted); font-size: 13px; }

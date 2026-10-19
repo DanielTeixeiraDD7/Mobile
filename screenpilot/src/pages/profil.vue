@@ -7,12 +7,14 @@ import { duree } from '@/domain/screentime';
 import { ENTRY_STATUSES, MEDIA_TYPES, type MediaType } from '@/domain/types';
 import { chargerRecos, type Recos } from '@/lib/recos';
 import { useBiblio } from '@/stores/biblio';
+import { useSocial } from '@/stores/social';
 import { ouvrirAjout } from '@/composables/useAjout';
 import Icone from '@/components/Icone.vue';
 import Assistant from '@/components/Assistant.vue';
 import CarteMedia from '@/components/CarteMedia.vue';
 
 const biblio = useBiblio();
+const social = useSocial();
 const type = ref<MediaType>((MEDIA_TYPES.find(t => biblio.entries.some(e => e.type === t)) ?? 'MOVIE'));
 const annee = new Date().getFullYear();
 
@@ -116,13 +118,15 @@ onBeforeUnmount(() => ac?.abort());
     </section>
 
     <section class="section">
-      <div class="card pad bientot">
+      <router-link to="/amis" class="card pad bientot">
         <span class="ic"><Icone nom="personnes" :taille="22" /></span>
         <div class="grow">
-          <b>Bientôt : amis et comparaisons</b>
-          <p class="small muted">Compte facultatif, ajout d’amis par code, classement du temps d’écran de la semaine, titres en commun. Rien ne sera partagé sans ton accord.</p>
+          <b>Amis et classement</b>
+          <p v-if="social.etat === 'connecte'" class="small muted">{{ social.reseau.amis.length ? `${social.reseau.amis.length} ami${social.reseau.amis.length > 1 ? 's' : ''} · classement de la semaine` : 'Invite tes amis avec ton code' }}{{ social.reseau.recues.length ? ` · ${social.reseau.recues.length} demande(s)` : '' }}</p>
+          <p v-else class="small muted">Compare ton temps d’écran, trouve vos titres en commun. Compte facultatif, privé par défaut.</p>
         </div>
-      </div>
+        <Icone nom="droite" :taille="18" class="dim" />
+      </router-link>
     </section>
 
     <nav class="liens">
@@ -160,7 +164,7 @@ onBeforeUnmount(() => ac?.abort());
 .jauge { height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
 .jauge i { display: block; height: 100%; border-radius: 4px; }
 .reco-aide { margin: 0 0 12px; }
-.bientot { display: flex; gap: 14px; align-items: flex-start; background: linear-gradient(135deg, color-mix(in srgb, var(--tv) 14%, var(--surface)), var(--surface)); }
+.bientot { display: flex; gap: 14px; align-items: center; color: inherit; text-decoration: none; background: linear-gradient(135deg, color-mix(in srgb, var(--tv) 14%, var(--surface)), var(--surface)); }
 .bientot p { margin: 4px 0 0; }
 .bientot .ic { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: color-mix(in srgb, var(--tv) 20%, transparent); color: var(--tv); flex: none; }
 .liens { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }

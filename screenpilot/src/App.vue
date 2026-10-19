@@ -21,6 +21,7 @@ const onglets = [
   { to: '/profil', label: 'Profil', icone: 'profil' },
 ];
 const secondaires = [
+  { to: '/amis', label: 'Amis', icone: 'personnes' },
   { to: '/calendrier', label: 'Calendrier', icone: 'calendrier' },
   { to: '/donnees', label: 'Données', icone: 'donnees' },
   { to: '/reglages', label: 'Réglages', icone: 'reglages' },
