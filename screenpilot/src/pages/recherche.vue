@@ -55,6 +55,12 @@ function classer(items: MediaSnapshot[], texte: string) {
     .sort((a, b) => b.s - a.s).map(x => x.m);
 }
 watch(q, () => { clearTimeout(minuterie); minuterie = setTimeout(lancer, 350); });
+// Lien vers la recherche depuis la recherche (même page) : on reprend le texte et la catégorie de l'adresse.
+watch(() => route.query, nq => {
+  if (typeof nq.q === 'string' && nq.q !== q.value.trim()) q.value = nq.q;
+  const t = MEDIA_TYPES.includes(nq.type as MediaType) ? (nq.type as MediaType) : null;
+  if (t !== type.value && (t || !nq.q)) type.value = t;
+});
 watch(type, lancer);
 onMounted(lancer);
 onBeforeUnmount(() => { ac?.abort(); clearTimeout(minuterie); });

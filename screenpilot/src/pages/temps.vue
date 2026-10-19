@@ -51,6 +51,10 @@ const reference = computed(() => {
 
 const typeActif = ref<string | null>(null);
 const parts = computed(() => MEDIA_TYPES.filter(t => b.value.parType[t] > 0).map(t => ({ id: t, valeur: b.value.parType[t], couleur: TYPE_LABELS[t].couleur })));
+// Manga : chapitres lus (hors temps d'écran sauf option).
+const lectureEnTemps = computed(() => !!biblio.settings.mangaDansTemps);
+const enTemps = (t: MediaType) => t !== 'MANGA' || lectureEnTemps.value;
+const chapitres = computed(() => b.value.unites.MANGA);
 const categories = computed(() => MEDIA_TYPES.map(t => ({
   type: t,
   minutes: b.value.parType[t],
@@ -130,10 +134,11 @@ const unites = (type: MediaType, n: number) => `${formatNumber(n)} ${unitLabel(t
           vs {{ nomPrecedent }}
         </template>
         <template v-else-if="b.total > 0">Rien sur la période précédente à ce stade</template>
-        <template v-else>{{ b.total ? '' : 'Rien de vu ou lu sur cette période' }}</template>
+        <template v-else>{{ b.total ? '' : 'Rien de vu sur cette période' }}</template>
         <template v-if="periode !== 'jour' && b.total"> · {{ duree(parJour) }} / jour</template>
       </p>
 
+      <p v-if="!lectureEnTemps && chapitres" class="lecture"><Icone nom="livre" :taille="15" /> {{ formatNumber(chapitres) }} chapitre{{ chapitres > 1 ? 's' : '' }} de manga lu{{ chapitres > 1 ? 's' : '' }}</p>
       <BarresTemps v-model:choisie="choisie" :tranches="tranches" :format="duree" :reference="reference" :hauteur="periode === 'mois' ? 150 : 170" />
       <transition name="fade" mode="out-in">
         <div v-if="detailChoisi" :key="choisie ?? -1" class="detail">
@@ -142,12 +147,12 @@ const unites = (type: MediaType, n: number) => `${formatNumber(n)} ${unitLabel(t
           <span v-for="t in MEDIA_TYPES.filter(x => detailChoisi!.parType[x])" :key="t" class="pt-l"><i :style="{ background: TYPE_LABELS[t].couleur }" />{{ duree(detailChoisi.parType[t]) }}</span>
         </div>
         <div v-else class="legende">
-          <span v-for="t in MEDIA_TYPES" :key="t"><i :style="{ background: TYPE_LABELS[t].couleur }" />{{ TYPE_LABELS[t].plusieurs }}</span>
+          <span v-for="t in MEDIA_TYPES.filter(enTemps)" :key="t"><i :style="{ background: TYPE_LABELS[t].couleur }" />{{ TYPE_LABELS[t].plusieurs }}</span>
         </div>
       </transition>
     </section>
 
-    <section v-if="b.total" class="section">
+    <section v-if="b.total || chapitres" class="section">
       <div class="section-head"><h2>Par catégorie</h2></div>
       <div class="card cats">
         <Donut v-model:actif="typeActif" :parts="parts" :taille="168" :epaisseur="20">
@@ -155,13 +160,14 @@ const unites = (type: MediaType, n: number) => `${formatNumber(n)} ${unitLabel(t
           <small class="muted">{{ typeActif ? TYPE_LABELS[typeActif as MediaType].plusieurs : 'au total' }}</small>
         </Donut>
         <ul class="liste-cats">
-          <li v-for="c in categories" :key="c.type" :class="{ eteint: !c.minutes, faible: typeActif && typeActif !== c.type }" @click="typeActif = typeActif === c.type ? null : c.type">
+          <li v-for="c in categories" :key="c.type" :class="{ eteint: !c.minutes && !c.unites, faible: typeActif && typeActif !== c.type }" @click="typeActif = typeActif === c.type ? null : c.type">
             <span class="ic" :style="{ color: TYPE_LABELS[c.type].couleur, background: `color-mix(in srgb, ${TYPE_LABELS[c.type].couleur} 15%, transparent)` }"><Icone :nom="TYPE_LABELS[c.type].icone" :taille="18" /></span>
             <span class="grow">
               <b>{{ TYPE_LABELS[c.type].plusieurs }}</b>
               <small class="muted">{{ c.unites ? unites(c.type, c.unites) : '—' }}<template v-if="c.avant || c.minutes"> · avant : {{ duree(c.avant) }}</template></small>
             </span>
-            <span class="v num">{{ duree(c.minutes) }}<small>{{ Math.round(c.part * 100) }} %</small></span>
+            <span v-if="enTemps(c.type)" class="v num">{{ duree(c.minutes) }}<small>{{ Math.round(c.part * 100) }} %</small></span>
+            <span v-else class="v num">{{ formatNumber(c.unites) }} ch.<small>lus</small></span>
           </li>
         </ul>
       </div>
@@ -178,7 +184,8 @@ const unites = (type: MediaType, n: number) => `${formatNumber(n)} ${unitLabel(t
               <b class="ellipsis">{{ titre(t.entry!) }}</b>
               <span class="barre"><i :style="{ width: (t.minutes / maxTitre) * 100 + '%', background: TYPE_LABELS[t.entry!.type].couleur }" /></span>
             </span>
-            <span class="v num">{{ duree(t.minutes) }}<small>{{ unites(t.entry!.type, t.unites) }}</small></span>
+            <span v-if="enTemps(t.entry!.type)" class="v num">{{ duree(t.minutes) }}<small>{{ unites(t.entry!.type, t.unites) }}</small></span>
+            <span v-else class="v num">{{ formatNumber(t.unites) }} ch.<small>lus</small></span>
           </router-link>
         </li>
       </ul>
@@ -219,7 +226,7 @@ const unites = (type: MediaType, n: number) => `${formatNumber(n)} ${unitLabel(t
 
     <details class="methode small muted">
       <summary>Comment est calculé ce temps ?</summary>
-      <p>C’est une <b>estimation</b> à partir de ce que tu marques comme vu ou lu dans ScreenPilot : chaque épisode compte sa durée (donnée par TMDB ou AniList, sinon {{ 24 }} min pour un anime, 40 min pour une série), chaque film sa durée, chaque chapitre de manga {{ biblio.settings.minutesPerChapter }} min (modifiable dans les réglages).</p>
+      <p>C’est une <b>estimation</b> à partir de ce que tu marques comme vu ou lu dans ScreenPilot : chaque épisode compte sa durée (donnée par TMDB ou AniList, sinon {{ 24 }} min pour un anime, 40 min pour une série), chaque film sa durée. <template v-if="lectureEnTemps">Chaque chapitre de manga compte {{ biblio.settings.minutesPerChapter }} min (réglable).</template><template v-else>Le manga se compte en chapitres lus, à part (option dans les réglages pour l’inclure).</template></p>
       <p>Le temps est compté au moment où tu appuies sur +1 (ou « Vu aujourd’hui »). Ajouter un titre déjà fini ne compte pas. Ce n’est pas le « Temps d’écran » du téléphone, auquel une app web n’a pas accès.</p>
     </details>
 
@@ -243,6 +250,7 @@ const unites = (type: MediaType, n: number) => `${formatNumber(n)} ${unitLabel(t
 .periode { font-size: 15px; }
 .periode { display: inline-block; }
 .periode::first-letter { text-transform: uppercase; }
+.lecture { display: flex; align-items: center; justify-content: center; gap: 6px; width: fit-content; margin: -8px auto 16px; padding: 5px 12px; border-radius: 99px; font-size: 13.5px; font-weight: 800; color: var(--manga); background: color-mix(in srgb, var(--manga) 14%, transparent); }
 .total { display: flex; align-items: baseline; justify-content: center; gap: 6px; margin: 14px 0 2px; }
 .approx { font-size: 26px; font-weight: 700; color: var(--dim); }
 .gros { font-size: 46px; font-weight: 850; letter-spacing: -.045em; line-height: 1.05; }

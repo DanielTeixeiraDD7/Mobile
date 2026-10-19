@@ -4,6 +4,7 @@ import type { MediaSnapshot, MediaType } from '@/domain/types';
 import { rangees, paysDe } from '@/lib/catalogue';
 import { messageErreur } from '@/lib/sources';
 import { chargerRecos } from '@/lib/recos';
+import { pasSorti } from '@/domain/sortie';
 import { ouvrirAjout } from '@/composables/useAjout';
 import { useBiblio } from '@/stores/biblio';
 import CarteMedia from './CarteMedia.vue';
@@ -30,7 +31,8 @@ function charger() {
   }
   lignes.value = defs.map(d => ({ id: d.id, titre: d.titre, items: [], chargement: true, erreur: null }));
   defs.forEach((d, i) => d.charger(signal)
-    .then(r => maj(i, { items: r.data.slice(0, 20), chargement: false }))
+    // Un titre pas encore sorti n'apparaît que dans « Prochainement » (sinon on croirait qu'il est sorti).
+    .then(r => maj(i, { items: r.data.filter(m => d.aVenir ? pasSorti(m) : !pasSorti(m)).slice(0, 20), chargement: false }))
     .catch(e => { if (!(e instanceof ApiError && e.kind === 'aborted')) maj(i, { chargement: false, erreur: messageErreur(e) }); }));
 }
 function maj(i: number, p: Partial<Etat>) { lignes.value = lignes.value.map((l, j) => (j === i ? { ...l, ...p } : l)); }

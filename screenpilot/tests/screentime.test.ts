@@ -3,7 +3,7 @@ import { bilan, bornes, duree, joursEcoules, minutesParUnite, serie, sessions } 
 import type { HistoryEvent } from '../src/domain/types';
 import { entry, media } from './fixtures';
 
-const R = { minutesPerChapter: 5 };
+const R = { minutesPerChapter: 5, mangaDansTemps: true };
 const t = (s: string) => new Date(s).getTime();
 let n = 0;
 const ev = (o: Partial<HistoryEvent> & Pick<HistoryEvent, 'entryId' | 'kind' | 'at'>): HistoryEvent => ({ id: 'e' + ++n, before: {}, after: {}, undone: false, ...o });
@@ -44,6 +44,12 @@ describe('sessions', () => {
     ];
     const s = sessions(h, [anime, serieTv, film], R);
     expect(s.map(x => [x.type, x.minutes])).toEqual([['ANIME', 48], ['MOVIE', 155]]);
+  });
+
+  it('manga : chapitres comptés, temps seulement si l’option est activée', () => {
+    const h = [ev({ entryId: manga.id, kind: 'progress', at: 1, before: { progress: 0 }, after: { progress: 40 } })];
+    expect(sessions(h, [manga], { minutesPerChapter: 5 })[0]).toMatchObject({ unites: 40, minutes: 0 });
+    expect(sessions(h, [manga], R)[0]).toMatchObject({ unites: 40, minutes: 200 });
   });
 
   it('titre retiré depuis : durée par défaut du type', () => {

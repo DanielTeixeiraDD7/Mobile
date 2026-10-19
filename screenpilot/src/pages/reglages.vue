@@ -9,7 +9,7 @@ import Icone from '@/components/Icone.vue';
 const biblio = useBiblio();
 const router = useRouter();
 const maj = (p: Partial<Settings>) => store.updateSettings(p);
-const VERSION = '2.1.0';
+const VERSION = '2.2.0';
 const val = (e: Event) => (e.target as HTMLSelectElement).value;
 </script>
 
@@ -48,7 +48,11 @@ const val = (e: Event) => (e.target as HTMLSelectElement).value;
 
     <div class="section-head section"><h2>Temps d’écran</h2></div>
     <div class="card pad stack">
-      <label class="field">
+      <label class="bascule">
+        <span class="grow"><b>Compter la lecture de manga</b><small>Sinon, le manga se compte en chapitres lus, à part du temps d’écran.</small></span>
+        <input type="checkbox" :checked="!!biblio.settings.mangaDansTemps" @change="maj({ mangaDansTemps: ($event.target as HTMLInputElement).checked })">
+      </label>
+      <label v-if="biblio.settings.mangaDansTemps" class="field">
         <span>Temps de lecture d’un chapitre de manga</span>
         <select class="input" :value="biblio.settings.minutesPerChapter" @change="maj({ minutesPerChapter: Number(val($event)) })">
           <option v-for="m in [2, 3, 4, 5, 6, 8, 10, 15]" :key="m" :value="m">{{ m }} min</option>
@@ -95,6 +99,10 @@ const val = (e: Event) => (e.target as HTMLSelectElement).value;
 </route>
 
 <style scoped>
+.bascule { display: flex; align-items: center; gap: 12px; }
+.bascule b { display: block; font-size: 15px; }
+.bascule small { display: block; color: var(--muted); font-size: 13px; }
+.bascule input { width: 46px; height: 28px; accent-color: var(--brand); flex: none; }
 .apropos p { margin: 0 0 10px; color: var(--muted); }
 .apropos b { color: var(--text); }
 .tmdb { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 10px; }

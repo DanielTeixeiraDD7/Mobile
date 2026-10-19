@@ -66,6 +66,7 @@ export function toSnapshot(r: RawResult & Partial<RawMovie & RawTv>, type: TmdbT
     season: null,
     seasonYear: null,
     startYear: annee(date),
+    releaseDate: date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null,
     averageScore: r.vote_average ? Math.round(r.vote_average * 10) : null,
     nextAiring: next && cumul ? { episode: cumul, airingAt: Math.floor(Date.parse(next.air_date + 'T12:00:00Z') / 1000) } : null,
     siteUrl: `https://www.themoviedb.org/${chemin(type)}/${r.id}`,

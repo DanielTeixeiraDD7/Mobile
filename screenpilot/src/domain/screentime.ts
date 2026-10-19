@@ -2,7 +2,8 @@ import { MEDIA_TYPES, type HistoryEvent, type LibraryEntry, type MediaType, type
 
 /**
  * Temps d'écran ESTIMÉ à partir de ce que tu marques comme vu / lu :
- * épisodes × durée d'un épisode, films × durée du film, chapitres × temps de lecture réglé.
+ * épisodes × durée d'un épisode, films × durée du film. Le manga se compte en chapitres lus ;
+ * il n'entre dans le temps (chapitres × temps de lecture réglé) que si l'option est activée.
  * Ce n'est pas le « Temps d'écran » du téléphone (inaccessible à une app web).
  */
 
@@ -33,7 +34,7 @@ const ACTIF = new Set(['CURRENT', 'REWATCH', 'PAUSED']);
  *   marquer « Terminé » un titre vu il y a longtemps (depuis « À regarder ») ne gonfle pas le temps du jour ;
  * - « add » : jamais (ajout de ce qu'on a déjà vu = rattrapage de bibliothèque).
  */
-export function sessions(history: HistoryEvent[], entries: LibraryEntry[], s: Pick<Settings, 'minutesPerChapter'>): Session[] {
+export function sessions(history: HistoryEvent[], entries: LibraryEntry[], s: Pick<Settings, 'minutesPerChapter' | 'mangaDansTemps'>): Session[] {
   const parId = new Map(entries.map(e => [e.id, e]));
   const out: Session[] = [];
   for (const h of history) {
@@ -44,7 +45,8 @@ export function sessions(history: HistoryEvent[], entries: LibraryEntry[], s: Pi
     const type = (e?.type ?? (h.entryId.split(':')[1] as MediaType)) as MediaType;
     if (h.kind === 'status' && type !== 'MOVIE' && !ACTIF.has(String(h.before.status ?? ''))) continue;
     const m = e ? minutesParUnite(e, s).minutes : type === 'MANGA' ? s.minutesPerChapter : DUREE_DEFAUT[type];
-    out.push({ at: h.at, entryId: h.entryId, type, unites: delta, minutes: delta * m });
+    const compte = type !== 'MANGA' || !!s.mangaDansTemps;
+    out.push({ at: h.at, entryId: h.entryId, type, unites: delta, minutes: compte ? delta * m : 0 });
   }
   return out.sort((a, b) => a.at - b.at);
 }

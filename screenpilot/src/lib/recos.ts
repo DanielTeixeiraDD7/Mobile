@@ -4,6 +4,7 @@ import { recommend, seeds, type Candidate, type Recommendation } from '@/domain/
 import type { MediaType } from '@/domain/types';
 import { details, messageErreur } from './sources';
 import { paysDe, rangees } from './catalogue';
+import { pasSorti } from '@/domain/sortie';
 
 export interface Recos { items: Recommendation[]; partiel: boolean; erreur: string | null }
 
@@ -26,7 +27,7 @@ export async function chargerRecos(type: MediaType, signal?: AbortSignal): Promi
     }
   }
   // Listes du pays (sorties, cinéma local, cinéma du monde) + tendances : utiles même sans historique.
-  const listes = rangees(type, paysDe(settings)).filter(r => r.id !== 'classiques');
+  const listes = rangees(type, paysDe(settings)).filter(r => r.id !== 'classiques' && !r.aVenir);
   const resultats = await Promise.allSettled(listes.map(r => r.charger(signal)));
   resultats.forEach((r, i) => {
     if (r.status === 'fulfilled') for (const m of r.value.data) candidats.push({ media: m, trending: true, raison: listes[i]!.titre });
@@ -34,5 +35,6 @@ export async function chargerRecos(type: MediaType, signal?: AbortSignal): Promi
     else { echecs++; derniere = r.reason; }
   });
   if (!candidats.length && derniere) return { items: [], partiel: false, erreur: messageErreur(derniere) };
-  return { items: recommend(entries, candidats, type, settings.titleLanguage, 12), partiel: echecs > 0, erreur: null };
+  // Recommander un titre pas encore sorti prête à confusion : il reste dans « Prochainement ».
+  return { items: recommend(entries, candidats.filter(c => !pasSorti(c.media)), type, settings.titleLanguage, 12), partiel: echecs > 0, erreur: null };
 }

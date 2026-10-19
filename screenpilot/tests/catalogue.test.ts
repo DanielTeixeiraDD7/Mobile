@@ -30,3 +30,24 @@ describe('recommandations au démarrage', () => {
     expect(r[0]!.reasons).toContain('Cinéma français');
   });
 });
+
+import { dateSortie, pasSorti } from '../src/domain/sortie';
+import { toSnapshot } from '../src/api/tmdb';
+
+describe('pas encore sorti', () => {
+  it('date future = à venir ; sans date, statut « à venir »', () => {
+    expect(pasSorti({ releaseDate: '2026-12-16', status: null }, '2026-10-19')).toBe(true);
+    expect(pasSorti({ releaseDate: '2026-10-19', status: null }, '2026-10-19')).toBe(false);
+    expect(pasSorti({ releaseDate: null, status: 'NOT_YET_RELEASED' })).toBe(true);
+    expect(pasSorti({ releaseDate: null, status: 'RELEASING' })).toBe(false);
+  });
+  it('liste TMDB : date reprise, libellé lisible', () => {
+    const m = toSnapshot({ id: 1, title: 'Avengers : Doomsday', release_date: '2026-12-16' }, 'MOVIE');
+    expect(m.releaseDate).toBe('2026-12-16');
+    expect(dateSortie(m)).toBe('16 décembre 2026');
+  });
+  it('les films et séries proposent une rangée « Prochainement »', () => {
+    expect(rangees('MOVIE', 'FR').find(r => r.aVenir)?.titre).toBe('Prochainement en France');
+    expect(rangees('TV', 'FR').some(r => r.aVenir)).toBe(true);
+  });
+});

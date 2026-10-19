@@ -18,7 +18,7 @@ const annee = new Date().getFullYear();
 
 // Vue d'ensemble, toutes catégories.
 const global = computed(() => MEDIA_TYPES.map(t => ({ type: t, s: typeStats(biblio.entries, t, new Date(), biblio.settings) })));
-const totalMinutes = computed(() => global.value.reduce((n, g) => n + g.s.minutes.value, 0));
+const totalMinutes = computed(() => global.value.filter(g => g.type !== 'MANGA' || biblio.settings.mangaDansTemps).reduce((n, g) => n + g.s.minutes.value, 0));
 const s = computed(() => global.value.find(g => g.type === type.value)!.s);
 const gout = computed(() => buildProfile(biblio.entries, type.value));
 const maxGenre = computed(() => gout.value.topGenres[0]?.weight ?? 1);
@@ -68,7 +68,7 @@ onBeforeUnmount(() => ac?.abort());
         <div class="stats">
           <div class="stat"><b class="num">{{ s.total }}</b><small>titres</small></div>
           <div v-if="type !== 'MOVIE'" class="stat"><b class="num">{{ formatNumber(s.units.value) }}</b><small>{{ unitLabel(type) }} {{ type === 'MANGA' ? 'lus' : 'vus' }}</small></div>
-          <div class="stat" :title="s.minutes.note"><b class="num">≈ {{ duree(s.minutes.value) }}</b><small>{{ type === 'MANGA' ? 'de lecture' : 'de visionnage' }}</small></div>
+          <div v-if="type !== 'MANGA' || biblio.settings.mangaDansTemps" class="stat" :title="s.minutes.note"><b class="num">≈ {{ duree(s.minutes.value) }}</b><small>{{ type === 'MANGA' ? 'de lecture' : 'de visionnage' }}</small></div>
           <div v-if="type !== 'MANGA' && s.remainingMinutes.value" class="stat" :title="s.remainingMinutes.note"><b class="num">≈ {{ duree(s.remainingMinutes.value) }}</b><small>reste à voir</small></div>
           <div v-if="s.meanScore" class="stat"><b class="num">{{ formatNumber(s.meanScore.value) }}/10</b><small>note moyenne</small></div>
           <div class="stat"><b class="num">{{ s.completedThisYear }}</b><small>{{ type === 'MOVIE' ? 'vus' : 'terminés' }} en {{ annee }}</small></div>

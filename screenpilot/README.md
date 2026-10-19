@@ -17,7 +17,8 @@ Calculé depuis l'historique (`src/domain/screentime.ts`), donc aussi pour le pa
 
 | Action | Compté |
 |---|---|
-| +1 épisode / chapitre | durée de l'épisode (TMDB / AniList ; défaut 24 min anime, 40 min série) ; chapitre = réglage (5 min) |
+| +1 épisode | durée de l'épisode (TMDB / AniList ; défaut 24 min anime, 40 min série) |
+| +1 chapitre de manga | compté en **chapitres lus**, hors temps d'écran (option : chapitres × temps réglé) |
 | Film « Vu aujourd'hui » | durée du film (défaut 1 h 50) |
 | Passage à « Terminé » d'un titre en cours | épisodes restants |
 | Ajout direct en « Terminé » / « Déjà vu » | rien (rattrapage) |
@@ -30,6 +31,8 @@ Ce n'est pas le « Temps d'écran » du téléphone (inaccessible à une app web
 Les tendances mondiales TMDB sont surtout américaines. Les rangées partent donc du **pays** (réglable : France, Portugal, Belgique, Suisse, Canada ; par défaut selon la langue du téléphone) — `src/lib/catalogue.ts` :
 au cinéma dans le pays, nouveautés en streaming dans le pays, cinéma / séries en langue locale, cinéma du monde (hors anglais), les mieux notés, puis tendances mondiales.
 L'animation japonaise est rangée dans Anime (AniList), pas dans Films / Séries.
+
+Les titres **pas encore sortis** (date de sortie future) n'apparaissent que dans « Prochainement », avec leur date ; « Vu aujourd'hui » est bloqué tant qu'ils ne sont pas sortis.
 
 « Pour toi » apparaît dès le premier titre de la catégorie (même « à voir ») : recommandations TMDB / AniList de tes titres + listes du pays, classées selon tes genres.
 

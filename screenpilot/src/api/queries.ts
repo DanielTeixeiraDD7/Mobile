@@ -5,7 +5,7 @@ export const MEDIA_FIELDS = `
   coverImage { large color }
   genres
   tags { name rank isMediaSpoiler isAdult }
-  season seasonYear startDate { year }
+  season seasonYear startDate { year month day }
   averageScore siteUrl
   nextAiringEpisode { episode airingAt }
 `;

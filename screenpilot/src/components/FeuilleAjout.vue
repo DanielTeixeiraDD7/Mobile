@@ -3,6 +3,7 @@ import { useAjout } from '@/composables/useAjout';
 import { mediaTitle, statusLabel, TYPE_LABELS } from '@/domain/labels';
 import type { EntryStatus } from '@/domain/types';
 import { ajouter, filmVu } from '@/lib/actions';
+import { dateSortie, pasSorti } from '@/domain/sortie';
 import { useBiblio } from '@/stores/biblio';
 import Feuille from './Feuille.vue';
 import Affiche from './Affiche.vue';
@@ -17,6 +18,8 @@ const titre = computed(() => (media.value ? mediaTitle(media.value, biblio.setti
 const choix = computed<{ id: string; libelle: string; aide: string; icone: string; principal?: boolean }[]>(() => {
   const t = media.value?.type;
   if (!t) return [];
+  // Pas encore sorti : on ne peut que le garder pour plus tard.
+  if (pasSorti(media.value!)) return [{ id: 'PLANNING', libelle: statusLabel(t, 'PLANNING'), aide: `Sortie ${dateSortie(media.value!) ?? 'à venir'} : il t’attendra dans ta liste`, icone: 'calendrier', principal: true }];
   if (t === 'MOVIE') return [
     { id: 'VU', libelle: 'Vu aujourd’hui', aide: 'Compte dans ton temps d’écran du jour', icone: 'oeil', principal: true },
     { id: 'PLANNING', libelle: statusLabel(t, 'PLANNING'), aide: 'À ta liste', icone: 'plus' },

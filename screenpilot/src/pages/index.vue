@@ -2,7 +2,7 @@
 import { bilan, bornes, duree, serie } from '@/domain/screentime';
 import { insights } from '@/domain/assistant';
 import { formatAiring } from '@/domain/calendar';
-import { TYPE_LABELS, mediaTitle } from '@/domain/labels';
+import { TYPE_LABELS, mediaTitle, formatNumber } from '@/domain/labels';
 import { MEDIA_TYPES, type MediaSnapshot, type MediaType } from '@/domain/types';
 import { useBiblio } from '@/stores/biblio';
 import { variation, totalJusqua } from '@/composables/useTemps';
@@ -102,7 +102,8 @@ const titre = (m: MediaSnapshot) => mediaTitle(m, biblio.settings.titleLanguage)
       <BarresTemps :tranches="tranches" :format="duree" :hauteur="92" />
       <div class="types">
         <span v-for="t in MEDIA_TYPES.filter(x => semaine.parType[x] > 0)" :key="t"><i :style="{ background: TYPE_LABELS[t].couleur }" />{{ TYPE_LABELS[t].plusieurs }} {{ duree(semaine.parType[t]) }}</span>
-        <span v-if="!semaine.total" class="dim">Appuie sur + quand tu finis un épisode : ton temps se calcule tout seul.</span>
+        <span v-if="!biblio.settings.mangaDansTemps && semaine.unites.MANGA"><i :style="{ background: TYPE_LABELS.MANGA.couleur }" />Manga {{ formatNumber(semaine.unites.MANGA) }} ch. lus</span>
+        <span v-if="!semaine.total && !semaine.unites.MANGA" class="dim">Appuie sur + quand tu finis un épisode : ton temps se calcule tout seul.</span>
       </div>
     </router-link>
 

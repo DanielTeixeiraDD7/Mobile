@@ -16,7 +16,7 @@ export interface RawMedia {
   tags: ({ name: string; rank: number | null; isMediaSpoiler: boolean | null; isAdult: boolean | null } | null)[] | null;
   season: string | null;
   seasonYear: number | null;
-  startDate: { year: number | null } | null;
+  startDate: { year: number | null; month?: number | null; day?: number | null } | null;
   averageScore: number | null;
   siteUrl: string | null;
   nextAiringEpisode: { episode: number; airingAt: number } | null;
@@ -45,6 +45,8 @@ export function toSnapshot(r: RawMedia, now = Date.now()): MediaSnapshot {
     season: r.season,
     seasonYear: r.seasonYear,
     startYear: r.startDate?.year ?? r.seasonYear ?? null,
+    releaseDate: r.startDate?.year && r.startDate.month && r.startDate.day
+      ? `${r.startDate.year}-${String(r.startDate.month).padStart(2, '0')}-${String(r.startDate.day).padStart(2, '0')}` : null,
     averageScore: r.averageScore,
     nextAiring: r.nextAiringEpisode ? { episode: r.nextAiringEpisode.episode, airingAt: r.nextAiringEpisode.airingAt } : null,
     siteUrl: r.siteUrl,

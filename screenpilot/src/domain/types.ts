@@ -31,6 +31,8 @@ export interface MediaSnapshot {
   season: string | null;
   seasonYear: number | null;
   startYear: number | null;
+  /** Date de sortie (AAAA-MM-JJ) quand la source la donne : film, 1er épisode, 1er chapitre. */
+  releaseDate?: string | null;
   averageScore: number | null;
   nextAiring: { episode: number; airingAt: number } | null;
   siteUrl: string | null;
@@ -89,6 +91,8 @@ export interface Settings {
   /** Objectif : temps d'écran maximum par semaine (minutes), null = aucun. */
   weeklyGoal: number | null;
   theme: 'auto' | 'clair' | 'sombre';
+  /** Compter la lecture de manga dans le temps d'écran (sinon : chapitres lus seulement). */
+  mangaDansTemps?: boolean;
   /** Pays pour le catalogue (sorties au cinéma, streaming, cinéma local). Absent = déduit de la langue du téléphone. */
   pays?: Pays;
 }

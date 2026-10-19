@@ -3,6 +3,7 @@ import { ApiError } from '@/api/anilist';
 import * as store from '@/data/store';
 import { canIncrement } from '@/domain/progress';
 import { formatAiring } from '@/domain/calendar';
+import { dateSortie, pasSorti } from '@/domain/sortie';
 import { duree, minutesParUnite } from '@/domain/screentime';
 import { TYPE_LABELS, formatLabel, formatNumber, mediaStatusLabel, mediaTitle, seasonLabel, statusLabel, totalUnits, unitLabel, unitShort } from '@/domain/labels';
 import { ENTRY_STATUSES, MEDIA_TYPES, entryId, sourceOf, type EntryStatus, type HistoryEvent, type LibraryEntry, type MediaSnapshot, type MediaType } from '@/domain/types';
@@ -71,10 +72,13 @@ const faits = computed(() => {
     m.type === 'MANGA' && m.volumes ? `${m.volumes} vol.` : null,
   ].filter(Boolean) as (string | number)[];
 });
+const aVenir = computed(() => !!media.value && pasSorti(media.value));
 const source = computed(() => (type.value && sourceOf(type.value) === 'tmdb' ? 'TMDB' : 'AniList'));
 
 // Suivi
-const statutsProposes = computed<EntryStatus[]>(() => (type.value === 'MOVIE' ? ['PLANNING', 'COMPLETED', 'DROPPED'] : [...ENTRY_STATUSES]));
+// Pas encore sorti : seulement « à voir » ou « abandonné » (sauf si déjà marqué autrement).
+const statutsProposes = computed<EntryStatus[]>(() => (aVenir.value ? (['PLANNING', 'DROPPED'] as EntryStatus[]).concat(entry.value && !['PLANNING', 'DROPPED'].includes(entry.value.status) ? [entry.value.status] : [])
+  : type.value === 'MOVIE' ? ['PLANNING', 'COMPLETED', 'DROPPED'] : [...ENTRY_STATUSES]));
 const tempsPasse = computed(() => {
   const e = entry.value;
   if (!e) return 0;
@@ -162,6 +166,7 @@ const retour = () => (window.history.state?.back ? router.back() : router.push('
           <p v-if="autre" class="small muted">{{ autre }}</p>
           <p class="small muted">{{ faits.join(' · ') }}</p>
           <p v-if="media.averageScore" class="small"><Icone nom="etoile" :taille="13" class="inline" /> <b>{{ (media.averageScore / 10).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) }}</b><span class="muted">/10 sur {{ source }}</span></p>
+          <p v-if="aVenir" class="sortie-prevue"><Icone nom="calendrier" :taille="14" /> {{ dateSortie(media) ? `Sortie le ${dateSortie(media)}` : 'Pas encore sorti' }}</p>
           <p v-if="media.nextAiring && media.type !== 'MOVIE'" class="small prochain">{{ media.type === 'TV' ? act.uniteLabel({ type: media.type, media }, media.nextAiring.episode) : `Ép. ${media.nextAiring.episode}` }} · {{ formatAiring(media.nextAiring.airingAt) }}</p>
         </div>
       </section>
@@ -171,7 +176,11 @@ const retour = () => (window.history.state?.back ? router.back() : router.push('
 
       <!-- Pas encore dans la bibliothèque -->
       <div v-if="!entry" class="card pad ajout">
-        <template v-if="media.type === 'MOVIE'">
+        <template v-if="aVenir">
+          <p class="small muted">Pas encore sorti{{ dateSortie(media) ? ` : prévu le ${dateSortie(media)}` : '' }}. Garde-le dans ta liste pour ne pas le rater.</p>
+          <button type="button" class="btn primary full" @click="act.ajouter(media, 'PLANNING')"><Icone nom="plus" :taille="18" /> {{ statusLabel(media.type, 'PLANNING') }}</button>
+        </template>
+        <template v-else-if="media.type === 'MOVIE'">
           <button type="button" class="btn primary full" @click="vuAujourdhui"><Icone nom="oeil" :taille="18" /> Vu aujourd’hui</button>
           <div class="row">
             <button type="button" class="btn grow" @click="act.ajouter(media, 'PLANNING')">À voir</button>
@@ -185,7 +194,7 @@ const retour = () => (window.history.state?.back ? router.back() : router.push('
             <button type="button" class="btn grow" @click="ouvrirAjout(media)">Autre…</button>
           </div>
         </template>
-        <p class="tiny dim center">« Déjà vu » / « Terminé » à l’ajout ne compte pas dans le temps d’écran.</p>
+        <p v-if="!aVenir" class="tiny dim center">« Déjà vu » / « Terminé » à l’ajout ne compte pas dans le temps d’écran.</p>
       </div>
 
       <!-- Suivi -->
@@ -201,6 +210,7 @@ const retour = () => (window.history.state?.back ? router.back() : router.push('
               <p><Icone nom="check" :taille="18" class="ok" /> Vu{{ entry.completedAt ? ` le ${dateFr(entry.completedAt)}` : '' }}<template v-if="entry.repeatCount"> · revu {{ entry.repeatCount }} fois</template></p>
               <button type="button" class="btn small" @click="vuAujourdhui"><Icone nom="synchro" :taille="16" /> Revu aujourd’hui</button>
             </template>
+            <p v-else-if="aVenir" class="small muted">Dans ta liste. Tu pourras le marquer comme vu après sa sortie{{ dateSortie(media) ? ` (${dateSortie(media)})` : '' }}.</p>
             <button v-else type="button" class="btn primary full" @click="vuAujourdhui"><Icone nom="oeil" :taille="18" /> Vu aujourd’hui</button>
           </div>
 
@@ -211,7 +221,7 @@ const retour = () => (window.history.state?.back ? router.back() : router.push('
                 <b class="num">{{ entry.progress ? ici : '—' }}</b>
                 <span class="muted small">{{ formatNumber(entry.progress) }} / {{ total ?? '?' }} {{ unitLabel(entry.type) }}</span>
               </button>
-              <button type="button" class="rond principal" :disabled="!canIncrement(entry)" :aria-label="`+1 : ${prochaine}`" @click="act.plusUn(entry)"><Icone nom="plus" :epaisseur="2.6" /></button>
+              <button type="button" class="rond principal" :disabled="!canIncrement(entry) || aVenir" :aria-label="`+1 : ${prochaine}`" @click="act.plusUn(entry)"><Icone nom="plus" :epaisseur="2.6" /></button>
             </div>
             <div v-if="total" class="progress grosse"><i :style="{ width: Math.min(100, (entry.progress / total) * 100) + '%', background: TYPE_LABELS[entry.type].couleur }" /></div>
             <p v-if="canIncrement(entry)" class="small muted center suivant">Prochain : <b>{{ prochaine }}</b></p>
@@ -308,6 +318,7 @@ const retour = () => (window.history.state?.back ? router.back() : router.push('
 .inline { display: inline-block; vertical-align: -2px; color: var(--movie); }
 .prochain { color: var(--brand); font-weight: 700; }
 .ajout { display: grid; gap: 8px; }
+.sortie-prevue { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px !important; padding: 4px 10px; border-radius: 99px; background: var(--brand-soft); color: var(--brand); font-size: 13px; font-weight: 800; }
 .ajout p { margin: 2px 0 0; }
 .suivi { padding: 14px 16px 16px; }
 .suivi .chips { margin: 0 -16px 6px; }

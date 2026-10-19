@@ -2,6 +2,7 @@
 import type { MediaSnapshot } from '@/domain/types';
 import { entryId } from '@/domain/types';
 import { mediaTitle } from '@/domain/labels';
+import { dateSortie, pasSorti } from '@/domain/sortie';
 import { useBiblio } from '@/stores/biblio';
 import Affiche from './Affiche.vue';
 import BadgeType from './BadgeType.vue';
@@ -12,6 +13,7 @@ const props = withDefaults(defineProps<{ media: MediaSnapshot; sousTitre?: strin
 const emit = defineEmits<{ ajouter: [MediaSnapshot] }>();
 const biblio = useBiblio();
 const titre = computed(() => mediaTitle(props.media, biblio.settings.titleLanguage));
+const aVenir = computed(() => pasSorti(props.media));
 const suivi = computed(() => biblio.parId(entryId(props.media.type, props.media.id)));
 </script>
 
@@ -19,12 +21,13 @@ const suivi = computed(() => biblio.parId(entryId(props.media.type, props.media.
   <div class="carte">
     <router-link :to="`/titre/${media.type}/${media.id}`" class="lien-carte">
       <Affiche :src="media.cover" :couleur="media.coverColor" :titre="titre" :largeur="999" :rayon="14">
+        <span v-if="aVenir" class="avenir">{{ dateSortie(media, true) ? `Sortie ${dateSortie(media, true)}` : 'À venir' }}</span>
         <span v-if="suivi" class="suivi" aria-label="Dans ta bibliothèque"><Icone nom="check" :taille="14" :epaisseur="3" /></span>
       </Affiche>
       <span class="nom clamp2">{{ titre }}</span>
       <span class="sous">
         <BadgeType v-if="badge" :type="media.type" court />
-        <span class="ellipsis">{{ sousTitre || media.startYear || '' }}</span>
+        <span class="ellipsis">{{ aVenir ? `Pas encore sorti${media.startYear && media.startYear > new Date().getFullYear() ? ' · ' + media.startYear : ''}` : sousTitre || media.startYear || '' }}</span>
       </span>
     </router-link>
     <button v-if="!suivi" type="button" class="ajout" :aria-label="`Ajouter ${titre}`" @click="emit('ajouter', media)"><Icone nom="plus" :taille="18" :epaisseur="2.8" /></button>
@@ -38,6 +41,7 @@ const suivi = computed(() => biblio.parId(entryId(props.media.type, props.media.
 .nom { font-size: 13.5px; font-weight: 700; line-height: 1.25; }
 .sous { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--dim); margin-top: -2px; min-width: 0; }
 .suivi { position: absolute; top: 6px; left: 6px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--ok); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.4); }
+.avenir { position: absolute; left: 6px; right: 6px; bottom: 6px; padding: 4px 6px; border-radius: 8px; background: rgba(10, 11, 16, .78); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); color: #fff; font-size: 11.5px; font-weight: 800; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ajout { position: absolute; top: 6px; right: 6px; width: 34px; height: 34px; border-radius: 12px; border: 0; display: grid; place-items: center; color: #fff; background: rgba(10, 11, 16, .62); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transition: transform .12s, background .15s; }
 .ajout:active { transform: scale(.9); background: var(--brand); }
 </style>

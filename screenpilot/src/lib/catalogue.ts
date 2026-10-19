@@ -24,10 +24,12 @@ export function paysDe(s: Pick<Settings, 'pays'>): Pays {
 /** Langues hors anglais (le japonais d'animation est filtré par le client TMDB). */
 const MONDE = 'fr|es|it|de|ko|ja|zh|pt|da|sv|no|fi|nl|pl|tr|hi|fa|ar|he|th|cs|ro|hu|el';
 const SANS_TELE = '10763|10764|10766|10767'; // actualités, téléréalité, feuilletons, talk-shows
+const demain = () => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10); };
+const dansMois = (n: number) => { const d = new Date(); d.setMonth(d.getMonth() + n); return d.toISOString().slice(0, 10); };
 const ilYa = (ans: number) => { const d = new Date(); d.setFullYear(d.getFullYear() - ans); return d.toISOString().slice(0, 10); };
 const tri = { sort_by: 'popularity.desc' };
 
-export interface Rangee { id: string; titre: string; charger: (signal?: AbortSignal) => Promise<{ data: import('@/domain/types').MediaSnapshot[]; stale: boolean }> }
+export interface Rangee { id: string; titre: string; /** Rangée des titres pas encore sortis (les autres les masquent). */ aVenir?: boolean; charger: (signal?: AbortSignal) => Promise<{ data: import('@/domain/types').MediaSnapshot[]; stale: boolean }> }
 
 export function rangees(type: MediaType, pays: Pays): Rangee[] {
   const p = NOM_PAYS[pays];
@@ -36,6 +38,7 @@ export function rangees(type: MediaType, pays: Pays): Rangee[] {
     { id: 'affiche', titre: `Au cinéma ${p.en}`, charger: s => tmdb.liste(t, 'movie/now_playing', { region: pays }, s) },
     { id: 'streaming', titre: `Nouveautés en streaming ${p.en}`, charger: s => tmdb.liste(t, 'discover/movie', { ...tri, watch_region: pays, with_watch_monetization_types: 'flatrate', 'vote_count.gte': 150, 'primary_release_date.gte': ilYa(1) }, s) },
     { id: 'local', titre: p.cinema, charger: s => tmdb.liste(t, 'discover/movie', { ...tri, with_original_language: p.langue, 'vote_count.gte': 20, 'primary_release_date.gte': ilYa(3) }, s) },
+    { id: 'prochainement', titre: `Prochainement ${p.en}`, aVenir: true, charger: s => tmdb.liste(t, 'discover/movie', { ...tri, region: pays, 'primary_release_date.gte': demain(), 'primary_release_date.lte': dansMois(8) }, s) },
     { id: 'monde', titre: 'Cinéma du monde', charger: s => tmdb.liste(t, 'discover/movie', { ...tri, with_original_language: MONDE, 'vote_count.gte': 100, 'primary_release_date.gte': ilYa(3) }, s) },
     { id: 'classiques', titre: 'Les mieux notés', charger: s => tmdb.liste(t, 'discover/movie', { sort_by: 'vote_average.desc', 'vote_count.gte': 3000 }, s) },
     { id: 'tendances', titre: 'Tendances mondiales', charger: s => tmdb.trending(t, s) },
@@ -43,6 +46,7 @@ export function rangees(type: MediaType, pays: Pays): Rangee[] {
   if (type === 'TV') return [
     { id: 'streaming', titre: `Populaires en streaming ${p.en}`, charger: s => tmdb.liste(t, 'discover/tv', { ...tri, watch_region: pays, with_watch_monetization_types: 'flatrate', 'vote_count.gte': 100, without_genres: SANS_TELE, 'first_air_date.gte': ilYa(3) }, s) },
     { id: 'local', titre: p.series, charger: s => tmdb.liste(t, 'discover/tv', { ...tri, with_original_language: p.langue, 'vote_count.gte': 30, without_genres: `${SANS_TELE}|10762`, 'first_air_date.gte': ilYa(10) }, s) },
+    { id: 'prochainement', titre: 'Nouvelles séries à venir', aVenir: true, charger: s => tmdb.liste(t, 'discover/tv', { ...tri, 'first_air_date.gte': demain(), 'first_air_date.lte': dansMois(6), without_genres: SANS_TELE }, s) },
     { id: 'monde', titre: 'Séries du monde', charger: s => tmdb.liste(t, 'discover/tv', { ...tri, with_original_language: MONDE, 'vote_count.gte': 100, without_genres: SANS_TELE, 'first_air_date.gte': ilYa(4) }, s) },
     { id: 'classiques', titre: 'Les mieux notées', charger: s => tmdb.liste(t, 'discover/tv', { sort_by: 'vote_average.desc', 'vote_count.gte': 2000, without_genres: SANS_TELE }, s) },
     { id: 'tendances', titre: 'Tendances mondiales', charger: s => tmdb.trending(t, s) },
