@@ -1,5 +1,7 @@
 # AnimePilot
 
+> **Remplacée par [ScreenPilot](../screenpilot/README.md)** (même adresse, mêmes données). Ce dossier reste comme archive de la version React.
+
 Suivi personnel d'anime et de manga pour iPhone : une PWA gratuite, hors-ligne, sans compte.
 
 **Ouvrir / installer** : https://danielteixeiradd7.github.io/Mobile/anime/ → Safari → Partager → « Sur l'écran d'accueil ».

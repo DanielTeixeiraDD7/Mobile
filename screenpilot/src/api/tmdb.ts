@@ -1,0 +1,156 @@
+import { TMDB_API_KEY } from '../config';
+import { ApiError, TTL, type CacheStore, type Result } from './anilist';
+import { RateLimiter } from './limiter';
+import type { MediaSnapshot } from '../domain/types';
+
+export const TMDB_URL = 'https://api.themoviedb.org/3';
+export const TMDB_IMG = 'https://image.tmdb.org/t/p/w342';
+export type TmdbType = 'MOVIE' | 'TV';
+const chemin = (t: TmdbType) => (t === 'MOVIE' ? 'movie' : 'tv');
+
+interface RawResult {
+  id: number; media_type?: string; adult?: boolean; title?: string; name?: string; original_title?: string; original_name?: string;
+  poster_path?: string | null; release_date?: string; first_air_date?: string; vote_average?: number; overview?: string;
+}
+export interface RawMovie extends RawResult {
+  runtime: number | null; status: string; genres: { id: number; name: string }[];
+}
+export interface RawTv extends RawResult {
+  status: string; genres: { id: number; name: string }[]; episode_run_time: number[]; number_of_episodes: number;
+  seasons: { season_number: number; episode_count: number }[];
+  last_episode_to_air: { runtime: number | null; season_number: number; episode_number: number } | null;
+  next_episode_to_air: { air_date: string | null; season_number: number; episode_number: number } | null;
+}
+
+const STATUTS: Record<string, string> = {
+  Released: 'FINISHED', 'Returning Series': 'RELEASING', Ended: 'FINISHED', Canceled: 'CANCELLED',
+  'In Production': 'NOT_YET_RELEASED', 'Post Production': 'NOT_YET_RELEASED', Planned: 'NOT_YET_RELEASED', Rumored: 'NOT_YET_RELEASED', Pilot: 'NOT_YET_RELEASED',
+};
+const annee = (d?: string) => (d && /^\d{4}/.test(d) ? Number(d.slice(0, 4)) : null);
+
+/** Résultat TMDB → copie locale, au même format que les titres AniList. */
+export function toSnapshot(r: RawResult & Partial<RawMovie & RawTv>, type: TmdbType, now = Date.now()): MediaSnapshot {
+  const film = type === 'MOVIE';
+  const saisons = (r.seasons ?? []).filter(s => s.season_number > 0 && s.episode_count > 0)
+    .sort((a, b) => a.season_number - b.season_number).map(s => ({ number: s.season_number, episodes: s.episode_count }));
+  const total = film ? 1 : saisons.length ? saisons.reduce((n, s) => n + s.episodes, 0) : r.number_of_episodes ?? null;
+  // Prochain épisode : numéro cumulé (comme AniList) pour réutiliser calendrier et « épisodes en retard ».
+  const next = !film && r.next_episode_to_air?.air_date ? r.next_episode_to_air : null;
+  let cumul: number | null = null;
+  if (next) cumul = saisons.filter(s => s.number < next.season_number).reduce((n, s) => n + s.episodes, 0) + next.episode_number;
+  const date = film ? r.release_date : r.first_air_date;
+  return {
+    id: r.id,
+    type,
+    title: { romaji: null, english: (film ? r.title : r.name) || null, native: (film ? r.original_title : r.original_name) || null },
+    cover: r.poster_path ? TMDB_IMG + r.poster_path : null,
+    coverColor: null,
+    format: type,
+    status: r.status ? STATUTS[r.status] ?? r.status : null,
+    episodes: total,
+    duration: film ? r.runtime ?? null : r.episode_run_time?.[0] ?? r.last_episode_to_air?.runtime ?? null,
+    chapters: null,
+    volumes: null,
+    genres: (r.genres ?? []).map(g => g.name),
+    tags: [],
+    season: null,
+    seasonYear: null,
+    startYear: annee(date),
+    averageScore: r.vote_average ? Math.round(r.vote_average * 10) : null,
+    nextAiring: next && cumul ? { episode: cumul, airingAt: Math.floor(Date.parse(next.air_date + 'T12:00:00Z') / 1000) } : null,
+    siteUrl: `https://www.themoviedb.org/${chemin(type)}/${r.id}`,
+    isAdult: !!r.adult,
+    fetchedAt: now,
+    ...(film ? {} : {
+      seasons: saisons,
+      nextEpisode: next ? { season: next.season_number, episode: next.episode_number, date: next.air_date! } : null,
+    }),
+  };
+}
+
+export interface TmdbDetails {
+  media: MediaSnapshot;
+  description: string;
+  recommendations: { rating: number; media: MediaSnapshot }[];
+}
+
+export class TmdbClient {
+  readonly limiter = new RateLimiter(35, 10_000);
+  private cache: CacheStore | null = null;
+  constructor(private key = TMDB_API_KEY, private fetchImpl: typeof fetch = (...a) => fetch(...a), private now: () => number = () => Date.now()) {}
+
+  setCache(cache: CacheStore | null) { this.cache = cache; }
+  get disponible() { return !!this.key; }
+
+  async request<T>(path: string, params: Record<string, string | number> = {}, signal?: AbortSignal): Promise<T> {
+    if (!this.key) throw new ApiError('unavailable', 'clé TMDB absente');
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) throw new ApiError('offline', 'hors-ligne');
+    if (!(await this.limiter.acquire(signal, 4000).catch(() => { throw new ApiError('aborted', 'annulée'); }))) throw new ApiError('rate_limited', 'limite locale', this.limiter.waitTime());
+    const q = new URLSearchParams({ api_key: this.key, language: 'fr-FR', ...Object.fromEntries(Object.entries(params).map(([k, v]) => [k, String(v)])) });
+    let res: Response;
+    try {
+      res = await this.fetchImpl(`${TMDB_URL}/${path}?${q}`, { signal, headers: { Accept: 'application/json' } });
+    } catch (e) {
+      if (signal?.aborted || (e instanceof DOMException && e.name === 'AbortError')) throw new ApiError('aborted', 'annulée');
+      throw new ApiError('offline', 'réseau injoignable');
+    }
+    if (res.status === 429) {
+      const retry = Number(res.headers.get('Retry-After')) || 10;
+      this.limiter.block(retry * 1000);
+      throw new ApiError('rate_limited', 'limite TMDB', retry * 1000);
+    }
+    if (res.status === 404) throw new ApiError('not_found', 'introuvable');
+    if (res.status === 401) throw new ApiError('unavailable', 'clé TMDB refusée');
+    if (res.status >= 500) throw new ApiError('unavailable', `HTTP ${res.status}`);
+    if (!res.ok) throw new ApiError('http', `HTTP ${res.status}`);
+    return res.json() as Promise<T>;
+  }
+
+  /** Même stratégie que pour AniList : cache frais, sinon réseau, sinon ancien cache. */
+  private async cached<T>(key: string, ttl: number, load: () => Promise<T>, force = false): Promise<Result<T>> {
+    const hit = this.cache ? await this.cache.get(key).catch(() => undefined) : undefined;
+    if (hit && !force && this.now() - hit.at < ttl) return { data: hit.data as T, stale: false, fetchedAt: hit.at };
+    try {
+      const data = await load();
+      const at = this.now();
+      await this.cache?.put(key, data, at).catch(() => {});
+      return { data, stale: false, fetchedAt: at };
+    } catch (e) {
+      if (hit && e instanceof ApiError && e.kind !== 'aborted' && e.kind !== 'not_found') return { data: hit.data as T, stale: true, fetchedAt: hit.at };
+      throw e;
+    }
+  }
+
+  /** Recherche films + séries (les personnes sont ignorées). */
+  search(text: string, page = 1, signal?: AbortSignal) {
+    const q = text.trim().replace(/\s+/g, ' ');
+    return this.cached(`tmdb:search:${page}:${q.toLowerCase()}`, TTL.search, async () => {
+      const d = await this.request<{ results: RawResult[]; page: number; total_pages: number }>('search/multi', { query: q, page, include_adult: 'false' }, signal);
+      const items = d.results
+        .filter(r => (r.media_type === 'movie' || r.media_type === 'tv') && !r.adult)
+        .map(r => toSnapshot(r, r.media_type === 'movie' ? 'MOVIE' : 'TV', this.now()));
+      return { items, hasNext: d.page < d.total_pages };
+    });
+  }
+
+  details(type: TmdbType, id: number, signal?: AbortSignal, force = false) {
+    return this.cached<TmdbDetails>(`tmdb:${type}:${id}`, TTL.media, async () => {
+      const r = await this.request<(RawMovie | RawTv) & { recommendations?: { results: RawResult[] } }>(`${chemin(type)}/${id}`, { append_to_response: 'recommendations' }, signal);
+      return {
+        media: toSnapshot(r as RawMovie & RawTv, type, this.now()),
+        description: r.overview ?? '',
+        recommendations: (r.recommendations?.results ?? []).filter(x => !x.adult).slice(0, 12)
+          .map(x => ({ rating: Math.round((x.vote_average ?? 0) * 10), media: toSnapshot(x, type, this.now()) })),
+      };
+    }, force);
+  }
+
+  trending(type: TmdbType, signal?: AbortSignal) {
+    return this.cached(`tmdb:trending:${type}`, TTL.trending, async () => {
+      const d = await this.request<{ results: RawResult[] }>(`trending/${chemin(type)}/week`, {}, signal);
+      return d.results.filter(r => !r.adult).map(r => toSnapshot(r, type, this.now()));
+    });
+  }
+}
+
+export const tmdb = new TmdbClient();
