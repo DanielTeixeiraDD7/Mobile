@@ -7,6 +7,7 @@ import { calculer } from '@/lib/import';
 import { useHypothesesStore } from '@/stores/hypotheses';
 import { euros, kms } from '@/lib/format';
 import { useAnnoncesStore } from '@/stores/annonces';
+import { libelleCriteres, useRecherchesStore } from '@/stores/recherches';
 import AnnonceForm from './components/AnnonceForm.vue';
 
 const annonces = useAnnoncesStore();
@@ -53,7 +54,9 @@ function enregistrer() {
   const n = nouvelle.value;
   if (!/^https?:\/\//.test(n.url)) { toast.add({ severity: 'warn', summary: 'Colle le lien de l’annonce', detail: 'Il commence par https://', life: 3000 }); return; }
   if (annonces.existe(n.url)) { toast.add({ severity: 'info', summary: 'Déjà dans ta liste', life: 2500 }); return; }
-  const a = annonces.ajouter({ ...n, titre: n.titre.trim() || 'Peugeot e-2008' });
+  // Sans titre : celui de la recherche en cours (« Peugeot 208 »…).
+  const recherche = libelleCriteres(useRecherchesStore().active.criteres);
+  const a = annonces.ajouter({ ...n, titre: n.titre.trim() || (recherche === 'Toutes les voitures' ? 'Annonce' : recherche) });
   ajout.value = false;
   toast.add({ severity: 'success', summary: 'Annonce ajoutée', life: 2000 });
   router.push('/annonces/' + a.id);

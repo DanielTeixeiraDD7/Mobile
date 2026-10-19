@@ -1,8 +1,12 @@
 export type Pays = 'PT' | 'DE' | 'FR' | 'BE';
 
+export type Energie = 'tous' | 'electrique' | 'hybride' | 'essence' | 'diesel';
+
 /** Critères d'une recherche, saisis une fois et appliqués à chaque site. */
 export interface Criteres {
-  modele: string; // id du catalogue (ex. « peugeot-e2008 »)
+  marque: string; // nom (catalogue ou libre), '' = toutes
+  modele: string; // nom (catalogue ou libre), '' = tous
+  energie: Energie;
   prixMax: number | null;
   anneeMin: number | null;
   kmMax: number | null;

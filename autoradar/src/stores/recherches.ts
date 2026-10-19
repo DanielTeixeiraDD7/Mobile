@@ -5,14 +5,26 @@ import { uid } from '@/lib/format';
 
 const CLE = 'autoradar:recherches';
 
-export const CRITERES_DEFAUT: Criteres = { modele: 'peugeot-e2008', prixMax: null, anneeMin: 2020, kmMax: null, tri: 'recent' };
+export const CRITERES_DEFAUT: Criteres = { marque: 'Peugeot', modele: 'e-2008', energie: 'tous', prixMax: null, anneeMin: 2020, kmMax: null, tri: 'recent' };
+/** Point de départ d'une nouvelle recherche : rien d'imposé. */
+export const CRITERES_VIDES: Criteres = { marque: '', modele: '', energie: 'tous', prixMax: null, anneeMin: null, kmMax: null, tri: 'recent' };
 const TOUS: Pays[] = ['PT', 'FR', 'DE', 'BE'];
+
+/** « Peugeot 208 », « Peugeot », « Toutes les voitures »… */
+export const libelleCriteres = (c: Criteres) => [c.marque, c.modele].map(s => s.trim()).filter(Boolean).join(' ') || 'Toutes les voitures';
+
+/** v1 : un seul modèle possible, noté par un id (« peugeot-e2008 »). */
+function migrer(r: Recherche): Recherche {
+  const c = r.criteres as Criteres & { modele: string; marque?: string };
+  if (c.marque !== undefined) return r;
+  return { ...r, criteres: { ...CRITERES_VIDES, ...c, marque: 'Peugeot', modele: 'e-2008', energie: 'tous' } };
+}
 
 const premiere = (): Recherche => ({ id: 'defaut', nom: 'Peugeot e-2008', criteres: { ...CRITERES_DEFAUT }, pays: [...TOUS], creeLe: Date.now() });
 
 export const useRecherchesStore = defineStore('recherches', () => {
   const lu = lire<{ liste: Recherche[]; active: string } | null>(CLE, null);
-  const liste = ref<Recherche[]>(lu?.liste?.length ? lu.liste : [premiere()]);
+  const liste = ref<Recherche[]>(lu?.liste?.length ? lu.liste.map(migrer) : [premiere()]);
   const activeId = ref(lu?.active && liste.value.some(r => r.id === lu.active) ? lu.active : liste.value[0]!.id);
   watch([liste, activeId], () => ecrire(CLE, { liste: liste.value, active: activeId.value }), { deep: true });
 

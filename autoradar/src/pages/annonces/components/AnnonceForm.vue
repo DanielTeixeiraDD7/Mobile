@@ -24,7 +24,7 @@ const ouiNon = [{ label: 'Oui', value: true }, { label: 'Non', value: false }, {
     </div>
     <div class="field full">
       <label for="af-titre">Titre</label>
-      <InputText id="af-titre" v-model="a.titre" placeholder="Ex. e-2008 GT 54 kWh" />
+      <InputText id="af-titre" v-model="a.titre" placeholder="Ex. Peugeot 208 GT Line 2021" />
     </div>
     <div class="field">
       <label for="af-prix">Prix</label>

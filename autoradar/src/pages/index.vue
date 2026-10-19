@@ -2,10 +2,9 @@
 import { useToast } from 'primevue/usetoast';
 import type { Criteres, Pays } from '@/lib/types';
 import { DRAPEAU, NOM_PAYS } from '@/lib/types';
-import { sitesDuPays } from '@/lib/sites';
-import { nomModele } from '@/lib/modeles';
+import { energieEffective, sitesDuPays } from '@/lib/sites';
 import { euros, kms } from '@/lib/format';
-import { CRITERES_DEFAUT, useRecherchesStore } from '@/stores/recherches';
+import { CRITERES_VIDES, libelleCriteres, useRecherchesStore } from '@/stores/recherches';
 import CriteresForm from '@/shared/components/CriteresForm.vue';
 import SiteCard from './components/SiteCard.vue';
 
@@ -16,7 +15,9 @@ const active = computed(() => recherches.active);
 // Résumé des critères en pastilles (config déclarative).
 const pastilles = computed(() => {
   const c = active.value.criteres;
-  const base = [{ icon: 'pi pi-bolt', texte: '100 % électrique' }];
+  const base: { icon: string; texte: string }[] = [];
+  const e = energieEffective(c);
+  if (e !== 'tous') base.push({ icon: 'pi pi-bolt', texte: { electrique: '100 % électrique', hybride: 'Hybride', essence: 'Essence', diesel: 'Diesel' }[e] });
   if (c.prixMax) base.push({ icon: 'pi pi-euro', texte: `≤ ${euros(c.prixMax)}` });
   if (c.anneeMin) base.push({ icon: 'pi pi-calendar', texte: `≥ ${c.anneeMin}` });
   if (c.kmMax) base.push({ icon: 'pi pi-gauge', texte: `≤ ${kms(c.kmMax)}` });
@@ -30,22 +31,24 @@ const nbSites = computed(() => pays.value.reduce((n, p) => n + sitesDuPays(p).le
 // Édition dans un panneau : on travaille sur une copie, appliquée à l'enregistrement.
 const edition = ref(false);
 const mode = ref<'modifier' | 'creer'>('modifier');
-const brouillon = ref<{ nom: string; criteres: Criteres; pays: Pays[] }>({ nom: '', criteres: { ...CRITERES_DEFAUT }, pays: [] });
+const brouillon = ref<{ nom: string; criteres: Criteres; pays: Pays[] }>({ nom: '', criteres: { ...CRITERES_VIDES }, pays: [] });
 
 function ouvrir(m: 'modifier' | 'creer') {
   mode.value = m;
   const r = active.value;
   brouillon.value = m === 'modifier'
-    ? { nom: r.nom, criteres: { ...r.criteres }, pays: [...r.pays] }
-    : { nom: 'Nouvelle recherche', criteres: { ...CRITERES_DEFAUT }, pays: [...ordrePays] };
+    // Nom automatique (= marque + modèle) laissé vide : il suivra les nouveaux critères.
+    ? { nom: r.nom === libelleCriteres(r.criteres) ? '' : r.nom, criteres: { ...r.criteres }, pays: [...r.pays] }
+    : { nom: '', criteres: { ...CRITERES_VIDES }, pays: [...ordrePays] };
   edition.value = true;
 }
 function enregistrer() {
   const b = brouillon.value;
   if (!b.pays.length) { toast.add({ severity: 'warn', summary: 'Choisis au moins un pays', life: 2500 }); return; }
-  const nom = b.nom.trim() || nomModele(b.criteres.modele);
-  if (mode.value === 'creer') recherches.creer(nom, b.criteres, b.pays);
-  else recherches.modifier(active.value.id, { nom, criteres: { ...b.criteres }, pays: [...b.pays] });
+  const criteres = { ...b.criteres, marque: b.criteres.marque.trim(), modele: b.criteres.modele.trim() };
+  const nom = b.nom.trim() || libelleCriteres(criteres);
+  if (mode.value === 'creer') recherches.creer(nom, criteres, b.pays);
+  else recherches.modifier(active.value.id, { nom, criteres, pays: [...b.pays] });
   edition.value = false;
 }
 </script>
@@ -60,7 +63,7 @@ function enregistrer() {
         </div>
       </div>
       <h1>{{ active.nom }}</h1>
-      <p class="model"><template v-if="active.nom !== nomModele(active.criteres.modele)">{{ nomModele(active.criteres.modele) }} · </template>{{ nbSites }} sites dans {{ pays.length }} pays</p>
+      <p class="model"><template v-if="active.nom !== libelleCriteres(active.criteres)">{{ libelleCriteres(active.criteres) }} · </template>{{ nbSites }} sites dans {{ pays.length }} pays</p>
       <div class="chips">
         <span v-for="p in pastilles" :key="p.texte" class="hchip"><i :class="p.icon" /> {{ p.texte }}</span>
         <span class="hchip">{{ drapeaux }}</span>
@@ -78,7 +81,7 @@ function enregistrer() {
 
     <div class="callout info mt-3">
       <i class="pi pi-bell" />
-      <p>Chaque bouton ouvre la page de résultats <b>du site officiel</b>, déjà filtrée. Pour être prévenu des nouvelles annonces, active l'<b>alerte e-mail</b> du site depuis cette page (gratuit).</p>
+      <p>Chaque bouton ouvre la page de résultats <b>du site officiel</b>, déjà filtrée. Pour être prévenu des nouvelles annonces, active l'<b>alerte e-mail</b> du site depuis cette page (gratuit). Un filtre marqué <b>–</b> est à régler sur la page du site.</p>
     </div>
 
     <section v-for="p in pays" :key="p">

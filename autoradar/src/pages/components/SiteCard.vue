@@ -1,18 +1,23 @@
 <script setup lang="ts">
-import type { Site, Filtre } from '@/lib/sites';
+import { energieEffective, type Site, type Filtre } from '@/lib/sites';
 import type { Criteres } from '@/lib/types';
 
 const props = defineProps<{ site: Site; criteres: Criteres }>();
-const lien = computed(() => props.site.lien(props.criteres));
+const lien = computed(() => props.site.recherche(props.criteres));
 
-const LIBELLES: Record<Filtre, string> = { modele: 'modèle', electrique: 'électrique', prix: 'prix', annee: 'année', km: 'km', tri: 'tri' };
-// Filtres demandés mais que ce site ne sait pas recevoir par le lien.
-const manquants = computed(() => {
-  const voulus: Filtre[] = ['modele'];
-  if (props.criteres.prixMax) voulus.push('prix');
-  if (props.criteres.anneeMin) voulus.push('annee');
-  if (props.criteres.kmMax) voulus.push('km');
-  return voulus.filter(f => !props.site.filtres.includes(f));
+const LIBELLES: Record<Filtre, string> = { marque: 'marque', modele: 'modèle', energie: 'énergie', prix: 'prix', annee: 'année', km: 'km', tri: 'tri' };
+// Filtres demandés : appliqués par le lien (✓) ou à régler sur le site (–).
+const filtres = computed(() => {
+  const c = props.criteres;
+  const voulus: Filtre[] = [];
+  if (c.marque.trim()) voulus.push('marque');
+  if (c.modele.trim()) voulus.push('modele');
+  if (energieEffective(c) !== 'tous') voulus.push('energie');
+  if (c.prixMax) voulus.push('prix');
+  if (c.anneeMin) voulus.push('annee');
+  if (c.kmMax) voulus.push('km');
+  voulus.push('tri');
+  return voulus.map(f => ({ f, ok: lien.value.ok.includes(f) }));
 });
 const initiale = computed(() => props.site.nom.replace(/[^A-Za-z0-9]/g, '').slice(0, 2));
 </script>
@@ -29,13 +34,15 @@ const initiale = computed(() => props.site.nom.replace(/[^A-Za-z0-9]/g, '').slic
     </header>
     <p class="note">{{ site.note }}</p>
     <div class="filtres">
-      <span v-for="f in site.filtres" :key="f" class="chip ok"><i class="pi pi-check" /> {{ LIBELLES[f] }}</span>
-      <span v-for="f in manquants" :key="'m' + f" class="chip ko" v-tooltip.top="'À régler sur le site'"><i class="pi pi-minus" /> {{ LIBELLES[f] }}</span>
+      <template v-for="x in filtres" :key="x.f">
+        <span v-if="x.ok" class="chip ok"><i class="pi pi-check" /> {{ LIBELLES[x.f] }}</span>
+        <span v-else class="chip ko" v-tooltip.top="'À régler sur le site'"><i class="pi pi-minus" /> {{ LIBELLES[x.f] }}</span>
+      </template>
     </div>
-    <a class="go" :href="lien" target="_blank" rel="noopener noreferrer">
+    <a class="go" :href="lien.url" target="_blank" rel="noopener noreferrer">
       Voir les résultats <i class="pi pi-external-link" />
     </a>
-    <small v-if="!site.verifie" class="dim"><i class="pi pi-info-circle" /> Lien construit d'après le format public du site.</small>
+    <small v-if="!lien.verifie" class="dim"><i class="pi pi-info-circle" /> Lien construit d'après le format public du site.</small>
   </article>
 </template>
 
