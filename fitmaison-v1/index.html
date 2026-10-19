@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>FitMaison v1 (archive)</title>
+  <meta name="description" content="Perte de poids : séances au poids du corps à la maison ou au jardin, suivi du poids, nutrition.">
+  <meta name="theme-color" content="#0f1115">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FitMaison">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main id="main"></main>
+
+  <nav class="tabbar" hidden>
+    <button data-tab="home" class="active"><span>🏠</span>Accueil</button>
+    <button data-tab="workouts"><span>🏋️</span>Séances</button>
+    <button data-tab="weight"><span>⚖️</span>Poids</button>
+    <button data-tab="food"><span>🥗</span>Nutrition</button>
+    <button data-tab="profile"><span>👤</span>Profil</button>
+  </nav>
+
+  <div id="player" hidden></div>
+  <div id="modal" hidden></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
