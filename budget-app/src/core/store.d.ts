@@ -1,0 +1,18 @@
+import type { Category, Kind, Settings, Settlement, Transaction } from './types';
+export const PALETTE: string[];
+export const SHARED_SETTINGS: string[];
+export const state: { transactions: Transaction[]; categories: Category[]; settings: Settings; settlements: Settlement[] };
+export function uid(): string;
+export function init(): Promise<void>;
+export function saveTransaction(tx: Partial<Transaction> & Pick<Transaction, 'type' | 'amount' | 'categoryId' | 'date'>): Promise<Transaction>;
+export function deleteTransaction(id: string): Promise<Transaction | undefined>;
+export function saveCategory(cat: Partial<Category> & Pick<Category, 'kind' | 'color'>): Promise<Category>;
+export function deleteCategory(id: string): Promise<void>;
+export function saveSettlement(s: Omit<Settlement, 'id' | 'createdAt'>): Promise<Settlement>;
+export function deleteSettlement(id: string): Promise<void>;
+export function setSetting(key: string, value: unknown): Promise<void>;
+export function replaceAll(data: { transactions?: Transaction[]; categories?: Category[]; settings?: Partial<Settings>; settlements?: Settlement[] }): Promise<void>;
+export function addTransactions(list: Transaction[]): Promise<void>;
+export function fallbackCategory(kind: Kind): Category;
+export function categoryById(id: string): Category;
+export function categoriesOf(kind: Kind): Category[];

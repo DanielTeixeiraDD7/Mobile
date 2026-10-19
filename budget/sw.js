@@ -1,29 +1,28 @@
-const VERSION = 'budget-v7';
-const ASSETS = [
-  './', 'index.html', 'manifest.webmanifest', 'css/style.css',
-  'js/main.js', 'js/db.js', 'js/store.js', 'js/format.js', 'js/i18n.js', 'js/calc.js',
-  'js/ui.js', 'js/chart.js', 'js/csv.js', 'js/backup.js', 'js/router.js',
-  'js/views/add.js', 'js/views/list.js', 'js/views/budget.js', 'js/views/stats.js',
-  'js/views/settings.js', 'js/views/txform.js', 'js/views/month.js', 'js/views/share.js', 'js/views/who.js', 'js/views/split.js',
-  'js/config.js', 'js/auth.js', 'js/api.js', 'js/outbox.js', 'js/sync.js',
-  'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
-];
+/* Service worker Budget v2 — généré au build (voir vite.config.ts). */
+const VERSION = 'budget2-eb23b67807';
+const ASSETS = ["./","assets/index-DRAN9_nw.js","assets/Barres-DU9CL72r.js","assets/ID-BVocRUmB.js","assets/budget-CgJ9lMwk.js","assets/historique-CkF4zhAb.js","assets/reglages-D3P_t9Nw.js","assets/route-block-D3E3wkB4.js","assets/stats-CZi15dDt.js","assets/Barres-SXQ04R6H.css","assets/ID-Beu5WW93.css","assets/budget-Ca8VEODi.css","assets/historique-C63HGKWV.css","assets/index-CcHwJ8BA.css","assets/reglages-B_jJaW1Y.css","assets/route-block-CIGRVROw.css","assets/stats-DriTbCcU.css","manifest.webmanifest","icons/icon.svg","icons/icon-192.png","icons/icon-512.png","icons/apple-touch-icon.png"];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION)
-    .then(c => c.addAll(ASSETS.map(url => new Request(url, { cache: 'reload' }))))
+    .then(c => c.addAll(ASSETS.map(u => new Request(u, { cache: 'reload' }))))
     .then(() => self.skipWaiting()));
 });
 
+// Supprime les anciens caches de la v2 et celui de la v1 (« budget-v7 »…), remplacée à la même adresse.
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys()
-    .then(keys => Promise.all(keys.filter(k => k.startsWith('budget-') && k !== VERSION).map(k => caches.delete(k))))
+    .then(keys => Promise.all(keys.filter(k => (k.startsWith('budget2-') && k !== VERSION) || /^budget-v\d+$/.test(k)).map(k => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
 
 self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET' || new URL(e.request.url).origin !== location.origin) return;
-  e.respondWith(caches.match(e.request, { ignoreSearch: true })
-    .then(hit => hit || fetch(e.request))
-    .catch(() => caches.match('index.html')));
+  const req = e.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  if (url.origin !== location.origin) return; // Supabase : jamais mis en cache
+  if (req.mode === 'navigate') {
+    e.respondWith(fetch(req, { cache: 'no-cache' }).catch(() => caches.match('./', { ignoreSearch: true })));
+    return;
+  }
+  e.respondWith(caches.match(req, { ignoreSearch: true }).then(hit => hit || fetch(req)));
 });

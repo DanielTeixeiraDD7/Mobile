@@ -4,9 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Budget</title>
-  <meta name="description" content="Suivi de dépenses et budget, 100 % local et hors-ligne.">
-  <meta name="theme-color" content="#f6f7f4" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#101412" media="(prefers-color-scheme: dark)">
+  <meta name="description" content="Suivi de dépenses et budget à deux, hors-ligne.">
+  <meta name="theme-color" content="#f4f6f3">
   <meta name="color-scheme" content="light dark">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
@@ -15,13 +14,20 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="css/style.css">
-  <script type="module" src="js/main.js"></script>
+  <script>
+    // Thème sombre appliqué avant le rendu (pas de flash) : réglage local copié par l'app.
+    try {
+      var t = localStorage.getItem('budget2:theme') || 'auto';
+      if (t === 'sombre' || (t === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
+    } catch (e) {}
+  </script>
+  <script type="module" crossorigin src="./assets/index-DRAN9_nw.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/route-block-D3E3wkB4.js">
+  <link rel="stylesheet" crossorigin href="./assets/route-block-CIGRVROw.css">
+  <link rel="stylesheet" crossorigin href="./assets/index-CcHwJ8BA.css">
 </head>
 <body>
-  <main id="main"></main>
-  <nav class="tabbar"></nav>
-  <div id="sheet" hidden></div>
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="app"></div>
+  <noscript>Budget nécessite JavaScript.</noscript>
 </body>
 </html>
