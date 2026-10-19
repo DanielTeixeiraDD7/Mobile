@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import * as store from '@/data/store';
 import { duree } from '@/domain/screentime';
-import type { Settings, TitleLanguage } from '@/domain/types';
+import { PAYS, type Pays, type Settings, type TitleLanguage } from '@/domain/types';
+import { NOM_PAYS, paysDe } from '@/lib/catalogue';
 import { useBiblio } from '@/stores/biblio';
 import Icone from '@/components/Icone.vue';
 
 const biblio = useBiblio();
 const router = useRouter();
 const maj = (p: Partial<Settings>) => store.updateSettings(p);
-const VERSION = '2.0.0';
+const VERSION = '2.1.0';
 const val = (e: Event) => (e.target as HTMLSelectElement).value;
 </script>
 
@@ -28,6 +29,12 @@ const val = (e: Event) => (e.target as HTMLSelectElement).value;
           </button>
         </div>
       </div>
+      <label class="field">
+        <span>Pays (films au cinéma, streaming, cinéma local)</span>
+        <select class="input" :value="paysDe(biblio.settings)" @change="maj({ pays: val($event) as Pays })">
+          <option v-for="p in PAYS" :key="p" :value="p">{{ NOM_PAYS[p].nom }}</option>
+        </select>
+      </label>
       <label class="field">
         <span>Titres des anime et manga</span>
         <select class="input" :value="biblio.settings.titleLanguage" @change="maj({ titleLanguage: val($event) as TitleLanguage })">

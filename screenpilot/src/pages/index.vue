@@ -6,12 +6,11 @@ import { TYPE_LABELS, mediaTitle } from '@/domain/labels';
 import { MEDIA_TYPES, type MediaSnapshot, type MediaType } from '@/domain/types';
 import { useBiblio } from '@/stores/biblio';
 import { variation, totalJusqua } from '@/composables/useTemps';
-import { ouvrirAjout } from '@/composables/useAjout';
-import { tendances, messageErreur } from '@/lib/sources';
 import { statut, uniteLabel } from '@/lib/actions';
 import Icone from '@/components/Icone.vue';
 import LigneTitre from '@/components/LigneTitre.vue';
 import CarteMedia from '@/components/CarteMedia.vue';
+import Catalogue from '@/components/Catalogue.vue';
 import Affiche from '@/components/Affiche.vue';
 import BarresTemps from '@/components/graph/BarresTemps.vue';
 
@@ -60,22 +59,9 @@ const intro = ref(false);
 try { intro.value = biblio.entries.length > 0 && !localStorage.getItem(CLE_INTRO); } catch { /* ignoré */ }
 function fermerIntro() { intro.value = false; try { localStorage.setItem(CLE_INTRO, '1'); } catch { /* ignoré */ } }
 
-// Tendances (réseau, en cache 12 h).
-const typeTendance = ref<MediaType>('MOVIE');
-const tendance = ref<{ items: MediaSnapshot[]; chargement: boolean; erreur: string | null }>({ items: [], chargement: false, erreur: null });
-let ac: AbortController | null = null;
-watch(typeTendance, async t => {
-  ac?.abort();
-  ac = new AbortController();
-  tendance.value = { items: tendance.value.items, chargement: true, erreur: null };
-  try {
-    const r = await tendances(t, ac.signal);
-    tendance.value = { items: r.data.slice(0, 16), chargement: false, erreur: null };
-  } catch (e) {
-    if (!ac.signal.aborted) tendance.value = { items: [], chargement: false, erreur: messageErreur(e) };
-  }
-}, { immediate: true });
-onBeforeUnmount(() => ac?.abort());
+// À découvrir : catégorie choisie (films par défaut, ou la plus suivie).
+const [plusSuivie, nb] = MEDIA_TYPES.map(t => [t, biblio.entries.filter(e => e.type === t).length] as const).sort((x, y) => y[1] - x[1])[0]!;
+const typeTendance = ref<MediaType>(nb ? plusSuivie : 'MOVIE');
 const titre = (m: MediaSnapshot) => mediaTitle(m, biblio.settings.titleLanguage);
 </script>
 
@@ -170,17 +156,13 @@ const titre = (m: MediaSnapshot) => mediaTitle(m, biblio.settings.titleLanguage)
     </section>
 
     <section class="section">
-      <div class="section-head"><h2>Tendances de la semaine</h2></div>
+      <div class="section-head"><h2>À découvrir</h2><router-link :to="`/recherche?type=${typeTendance}`">Plus</router-link></div>
       <div class="chips">
         <button v-for="t in MEDIA_TYPES" :key="t" type="button" class="chip" :class="{ on: typeTendance === t }" @click="typeTendance = t">
           <i class="pt" :style="{ background: TYPE_LABELS[t].couleur }" />{{ TYPE_LABELS[t].plusieurs }}
         </button>
       </div>
-      <p v-if="tendance.erreur" class="banner warn">{{ tendance.erreur }}</p>
-      <ul v-else class="hscroll" :class="{ charge: tendance.chargement }">
-        <li v-for="m in tendance.items" :key="m.type + m.id"><CarteMedia :media="m" :badge="false" @ajouter="ouvrirAjout" /></li>
-        <template v-if="!tendance.items.length && tendance.chargement"><li v-for="i in 6" :key="i" class="fantome" /></template>
-      </ul>
+      <Catalogue :type="typeTendance" :max="3" pour-toi />
     </section>
   </div>
 </template>
@@ -213,8 +195,5 @@ const titre = (m: MediaSnapshot) => mediaTitle(m, biblio.settings.titleLanguage)
 .prochain { display: flex; gap: 10px; align-items: center; padding: 10px; color: inherit; text-decoration: none; border-radius: 16px; }
 .prochain b { font-size: 14px; line-height: 1.25; }
 .prochain small { display: block; font-size: 12px; color: var(--brand); font-weight: 700; margin-top: 2px; }
-.charge { opacity: .6; }
-.fantome { height: 210px; border-radius: 14px; background: var(--surface-2); animation: pulse 1.2s infinite; }
-@keyframes pulse { 50% { opacity: .5; } }
 @media (min-width: 992px) { .mobile-only { display: none; } }
 </style>

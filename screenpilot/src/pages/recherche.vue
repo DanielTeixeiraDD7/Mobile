@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { MEDIA_TYPES, type MediaSnapshot, type MediaType } from '@/domain/types';
 import { TYPE_LABELS } from '@/domain/labels';
-import { rechercher, rechercherTout, tendances, messageErreur } from '@/lib/sources';
+import { rechercher, rechercherTout, messageErreur } from '@/lib/sources';
 import { ApiError } from '@/api/anilist';
 import { ouvrirAjout } from '@/composables/useAjout';
 import Icone from '@/components/Icone.vue';
 import CarteMedia from '@/components/CarteMedia.vue';
+import Catalogue from '@/components/Catalogue.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -27,9 +28,8 @@ async function lancer() {
   etat.value = { ...etat.value, chargement: true, erreurs: [] };
   try {
     if (texte.length < 2) {
-      // Sans recherche : tendances de la catégorie (ou des films par défaut).
-      const r = await tendances(type.value ?? 'MOVIE', signal);
-      etat.value = { items: r.data, chargement: false, erreurs: [], ancien: r.stale };
+      // Sans recherche : rangées « À découvrir » (composant Catalogue).
+      etat.value = { items: [], chargement: false, erreurs: [], ancien: false };
     } else if (type.value) {
       const r = await rechercher(type.value, texte, signal);
       etat.value = { items: r.items, chargement: false, erreurs: [], ancien: r.stale };
@@ -76,18 +76,23 @@ const sansTexte = computed(() => q.value.trim().length < 2);
       </button>
     </div>
 
-    <p class="label titre-liste">{{ sansTexte ? `Tendances · ${TYPE_LABELS[type ?? 'MOVIE'].plusieurs}` : 'Résultats' }}</p>
-    <p v-for="e in etat.erreurs" :key="e" class="banner warn">{{ e }}</p>
-    <p v-if="etat.ancien" class="banner">Résultats enregistrés (hors-ligne).</p>
-
-    <ul class="grille" :class="{ charge: etat.chargement }" aria-live="polite">
-      <li v-for="m in etat.items" :key="m.type + m.id"><CarteMedia :media="m" @ajouter="ouvrirAjout" /></li>
-      <template v-if="etat.chargement && !etat.items.length"><li v-for="i in 9" :key="'f' + i" class="fantome" /></template>
-    </ul>
-    <div v-if="!etat.chargement && !etat.items.length && !etat.erreurs.length" class="vide">
-      <Icone nom="recherche" :taille="32" />
-      <p>Aucun résultat{{ type ? ` dans ${TYPE_LABELS[type].plusieurs.toLowerCase()}` : '' }}.</p>
-    </div>
+    <template v-if="sansTexte">
+      <p class="label titre-liste">À découvrir · {{ TYPE_LABELS[type ?? 'MOVIE'].plusieurs }}</p>
+      <Catalogue :type="type ?? 'MOVIE'" pour-toi />
+    </template>
+    <template v-else>
+      <p class="label titre-liste">Résultats</p>
+      <p v-for="e in etat.erreurs" :key="e" class="banner warn">{{ e }}</p>
+      <p v-if="etat.ancien" class="banner">Résultats enregistrés (hors-ligne).</p>
+      <ul class="grille" :class="{ charge: etat.chargement }" aria-live="polite">
+        <li v-for="m in etat.items" :key="m.type + m.id"><CarteMedia :media="m" @ajouter="ouvrirAjout" /></li>
+        <template v-if="etat.chargement && !etat.items.length"><li v-for="i in 9" :key="'f' + i" class="fantome" /></template>
+      </ul>
+      <div v-if="!etat.chargement && !etat.items.length && !etat.erreurs.length" class="vide">
+        <Icone nom="recherche" :taille="32" />
+        <p>Aucun résultat{{ type ? ` dans ${TYPE_LABELS[type].plusieurs.toLowerCase()}` : '' }}.</p>
+      </div>
+    </template>
 
     <p class="credits dim tiny">Films et séries : TMDB. Anime et manga : AniList. ScreenPilot utilise l’API TMDB mais n’est ni approuvé ni certifié par TMDB.</p>
   </div>

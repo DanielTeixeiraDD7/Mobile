@@ -11,6 +11,7 @@ const chemin = (t: TmdbType) => (t === 'MOVIE' ? 'movie' : 'tv');
 interface RawResult {
   id: number; media_type?: string; adult?: boolean; title?: string; name?: string; original_title?: string; original_name?: string;
   poster_path?: string | null; release_date?: string; first_air_date?: string; vote_average?: number; overview?: string;
+  genre_ids?: number[]; original_language?: string;
 }
 export interface RawMovie extends RawResult {
   runtime: number | null; status: string; genres: { id: number; name: string }[];
@@ -26,6 +27,15 @@ const STATUTS: Record<string, string> = {
   Released: 'FINISHED', 'Returning Series': 'RELEASING', Ended: 'FINISHED', Canceled: 'CANCELLED',
   'In Production': 'NOT_YET_RELEASED', 'Post Production': 'NOT_YET_RELEASED', Planned: 'NOT_YET_RELEASED', Rumored: 'NOT_YET_RELEASED', Pilot: 'NOT_YET_RELEASED',
 };
+/** Genres TMDB (fr-FR) : les listes ne donnent que les identifiants. */
+const GENRES: Record<number, string> = {
+  28: 'Action', 12: 'Aventure', 16: 'Animation', 35: 'Comédie', 80: 'Crime', 99: 'Documentaire', 18: 'Drame', 10751: 'Familial',
+  14: 'Fantastique', 36: 'Histoire', 27: 'Horreur', 10402: 'Musique', 9648: 'Mystère', 10749: 'Romance', 878: 'Science-Fiction',
+  10770: 'Téléfilm', 53: 'Thriller', 10752: 'Guerre', 37: 'Western', 10759: 'Action & Adventure', 10762: 'Kids', 10763: 'News',
+  10764: 'Reality', 10765: 'Science-Fiction & Fantastique', 10766: 'Soap', 10767: 'Talk', 10768: 'War & Politics',
+};
+/** Animation japonaise : rangée dans la catégorie Anime (AniList), pas dans Films / Séries. */
+export const estAnimeJaponais = (r: Pick<RawResult, 'original_language' | 'genre_ids'>) => r.original_language === 'ja' && !!r.genre_ids?.includes(16);
 const annee = (d?: string) => (d && /^\d{4}/.test(d) ? Number(d.slice(0, 4)) : null);
 
 /** Résultat TMDB → copie locale, au même format que les titres AniList. */
@@ -51,7 +61,7 @@ export function toSnapshot(r: RawResult & Partial<RawMovie & RawTv>, type: TmdbT
     duration: film ? r.runtime ?? null : r.episode_run_time?.[0] ?? r.last_episode_to_air?.runtime ?? null,
     chapters: null,
     volumes: null,
-    genres: (r.genres ?? []).map(g => g.name),
+    genres: r.genres ? r.genres.map(g => g.name) : (r.genre_ids ?? []).map(id => GENRES[id]).filter((g): g is string => !!g),
     tags: [],
     season: null,
     seasonYear: null,
@@ -146,9 +156,15 @@ export class TmdbClient {
   }
 
   trending(type: TmdbType, signal?: AbortSignal) {
-    return this.cached(`tmdb:trending:${type}`, TTL.trending, async () => {
-      const d = await this.request<{ results: RawResult[] }>(`trending/${chemin(type)}/week`, {}, signal);
-      return d.results.filter(r => !r.adult).map(r => toSnapshot(r, type, this.now()));
+    return this.liste(type, `trending/${chemin(type)}/week`, {}, signal);
+  }
+
+  /** Liste TMDB (à l'affiche, découverte par pays / langue…), sans contenu adulte ni anime japonais. */
+  liste(type: TmdbType, route: string, params: Record<string, string | number> = {}, signal?: AbortSignal) {
+    const cle = `tmdb:liste:${type}:${route}:${new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString()}`;
+    return this.cached(cle, TTL.trending, async () => {
+      const d = await this.request<{ results: RawResult[] }>(route, params, signal);
+      return d.results.filter(r => !r.adult && !estAnimeJaponais(r)).map(r => toSnapshot(r, type, this.now()));
     });
   }
 }

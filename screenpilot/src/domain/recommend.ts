@@ -9,6 +9,8 @@ export interface Candidate {
   /** Votes de la communauté AniList pour cette recommandation. */
   rating?: number;
   trending?: boolean;
+  /** Raison affichée quand le candidat ne vient pas d'un de tes titres (« Cinéma français »…). */
+  raison?: string;
 }
 
 export interface Recommendation {
@@ -25,13 +27,14 @@ export function recommend(entries: LibraryEntry[], candidates: Candidate[], type
   const profile = buildProfile(entries, type);
   const pv = profileVector(profile);
   const owned = new Set(entries.map(e => e.id));
-  const merged = new Map<number, { media: MediaSnapshot; froms: LibraryEntry[]; rating: number; trending: boolean }>();
+  const merged = new Map<number, { media: MediaSnapshot; froms: LibraryEntry[]; rating: number; trending: boolean; raison?: string }>();
   for (const c of candidates) {
     if (c.media.type !== type || c.media.isAdult || owned.has(entryId(c.media.type, c.media.id))) continue;
     const m = merged.get(c.media.id) ?? { media: c.media, froms: [], rating: 0, trending: false };
     if (c.from && !m.froms.some(f => f.id === c.from!.id)) m.froms.push(c.from);
     m.rating += Math.max(0, c.rating ?? 0);
     m.trending ||= !!c.trending;
+    m.raison ??= c.raison;
     merged.set(c.media.id, m);
   }
   const out: Recommendation[] = [];
@@ -44,7 +47,8 @@ export function recommend(entries: LibraryEntry[], candidates: Candidate[], type
     const liked = m.media.genres.filter(g => (profile.genres.get(g) ?? 0) > 0).sort((a, b) => (profile.genres.get(b) ?? 0) - (profile.genres.get(a) ?? 0));
     if (liked.length) reasons.push(`Genres que tu apprécies : ${liked.slice(0, 3).join(', ')}`);
     if (m.froms.length) reasons.push(`Recommandé par la communauté pour « ${mediaTitle(m.froms[0]!.media, lang)} »${m.froms.length > 1 ? ` et ${m.froms.length - 1} autre(s)` : ''}`);
-    if (m.trending && !m.froms.length) reasons.push(`Populaire en ce moment sur ${sourceOf(type) === 'tmdb' ? 'TMDB' : 'AniList'}`);
+    if (m.raison && !m.froms.length) reasons.push(m.raison);
+    else if (m.trending && !m.froms.length) reasons.push(`Populaire en ce moment sur ${sourceOf(type) === 'tmdb' ? 'TMDB' : 'AniList'}`);
     out.push({ media: m.media, score, reasons });
   }
   return out.sort((a, b) => b.score - a.score).slice(0, limit);
@@ -52,10 +56,13 @@ export function recommend(entries: LibraryEntry[], candidates: Candidate[], type
 
 /** Titres aimés servant de point de départ (les mieux notés / terminés). */
 export function seeds(entries: LibraryEntry[], type: MediaType, n = 5): LibraryEntry[] {
-  return entries
+  const aimes = entries
     .filter(e => e.type === type && (e.score === null ? ['COMPLETED', 'REWATCH', 'CURRENT'].includes(e.status) : e.score >= 7))
-    .sort((a, b) => (b.score ?? 7) - (a.score ?? 7) || b.updatedAt - a.updatedAt)
-    .slice(0, n);
+    .sort((a, b) => (b.score ?? 7) - (a.score ?? 7) || b.updatedAt - a.updatedAt);
+  // Démarrage : rien de vu ni noté → les titres ajoutés « à voir » servent de point de départ.
+  if (aimes.length) return aimes.slice(0, n);
+  return entries.filter(e => e.type === type && e.status !== 'DROPPED' && (e.score ?? 7) >= 5)
+    .sort((a, b) => b.updatedAt - a.updatedAt).slice(0, n);
 }
 
 /** « Quoi regarder ensuite ? » parmi ta liste « à regarder », selon tes goûts. */

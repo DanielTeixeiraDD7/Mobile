@@ -2,13 +2,14 @@ import { ApiError } from '@/api/anilist';
 import * as store from '@/data/store';
 import { recommend, seeds, type Candidate, type Recommendation } from '@/domain/recommend';
 import type { MediaType } from '@/domain/types';
-import { details, messageErreur, tendances } from './sources';
+import { details, messageErreur } from './sources';
+import { paysDe, rangees } from './catalogue';
 
 export interface Recos { items: Recommendation[]; partiel: boolean; erreur: string | null }
 
 /**
  * Candidats = recommandations de la source (TMDB ou AniList) pour tes titres aimés (≤ 5 requêtes, en cache)
- * + tendances de la semaine. Le classement est calculé localement.
+ * + listes de ton pays et tendances. Classement local selon tes goûts ; sans historique, selon la popularité.
  */
 export async function chargerRecos(type: MediaType, signal?: AbortSignal): Promise<Recos> {
   const { entries, settings } = store.getState();
@@ -24,13 +25,14 @@ export async function chargerRecos(type: MediaType, signal?: AbortSignal): Promi
       echecs++; derniere = e;
     }
   }
-  try {
-    const t = await tendances(type, signal);
-    for (const m of t.data) candidats.push({ media: m, trending: true });
-  } catch (e) {
-    if (e instanceof ApiError && e.kind === 'aborted') throw e;
-    echecs++; derniere = e;
-  }
+  // Listes du pays (sorties, cinéma local, cinéma du monde) + tendances : utiles même sans historique.
+  const listes = rangees(type, paysDe(settings)).filter(r => r.id !== 'classiques');
+  const resultats = await Promise.allSettled(listes.map(r => r.charger(signal)));
+  resultats.forEach((r, i) => {
+    if (r.status === 'fulfilled') for (const m of r.value.data) candidats.push({ media: m, trending: true, raison: listes[i]!.titre });
+    else if (r.reason instanceof ApiError && r.reason.kind === 'aborted') throw r.reason;
+    else { echecs++; derniere = r.reason; }
+  });
   if (!candidats.length && derniere) return { items: [], partiel: false, erreur: messageErreur(derniere) };
   return { items: recommend(entries, candidats, type, settings.titleLanguage, 12), partiel: echecs > 0, erreur: null };
 }

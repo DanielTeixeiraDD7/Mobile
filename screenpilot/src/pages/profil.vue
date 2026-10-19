@@ -102,7 +102,7 @@ onBeforeUnmount(() => ac?.abort());
         <button v-if="recos" type="button" @click="recommander">Recalculer</button>
       </div>
       <div v-if="!recos && !recosEnCours" class="card pad">
-        <p class="small muted reco-aide">Calcul local à partir de tes goûts. Candidats : titres proches de tes préférés et tendances de la semaine ({{ type === 'MOVIE' || type === 'TV' ? 'TMDB' : 'AniList' }}).</p>
+        <p class="small muted reco-aide">Calcul local à partir de tes goûts. Candidats : titres proches de ce que tu as ajouté, sorties de ton pays, cinéma local et du monde ({{ type === 'MOVIE' || type === 'TV' ? 'TMDB' : 'AniList' }}). Marche dès le premier titre.</p>
         <button type="button" class="btn primary full" @click="recommander">Me recommander des {{ TYPE_LABELS[type].plusieurs.toLowerCase() }}</button>
       </div>
       <p v-else-if="recosEnCours" class="muted">Calcul…</p>

@@ -1,0 +1,1 @@
+import{Pt as e}from"./route-block-CRlDPYyd.js";var t=e([]),n=0;function r(e=15){try{navigator.vibrate?.(e)}catch{}}function i(e,r={}){let i={id:++n,texte:e,type:``,duree:r.action?5e3:2600,...r};t.value=[...t.value.slice(-2),i],setTimeout(()=>a(i.id),i.duree)}function a(e){t.value=t.value.filter(t=>t.id!==e)}var o=()=>t;export{r as i,i as n,o as r,a as t};

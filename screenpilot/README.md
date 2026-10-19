@@ -25,6 +25,14 @@ Calculé depuis l'historique (`src/domain/screentime.ts`), donc aussi pour le pa
 
 Ce n'est pas le « Temps d'écran » du téléphone (inaccessible à une app web).
 
+## Catalogue « À découvrir »
+
+Les tendances mondiales TMDB sont surtout américaines. Les rangées partent donc du **pays** (réglable : France, Portugal, Belgique, Suisse, Canada ; par défaut selon la langue du téléphone) — `src/lib/catalogue.ts` :
+au cinéma dans le pays, nouveautés en streaming dans le pays, cinéma / séries en langue locale, cinéma du monde (hors anglais), les mieux notés, puis tendances mondiales.
+L'animation japonaise est rangée dans Anime (AniList), pas dans Films / Séries.
+
+« Pour toi » apparaît dès le premier titre de la catégorie (même « à voir ») : recommandations TMDB / AniList de tes titres + listes du pays, classées selon tes genres.
+
 ## Sources
 
 - Films / séries : API TMDB v3 (clé publique de lecture, usage **non commercial**, attribution dans Réglages).

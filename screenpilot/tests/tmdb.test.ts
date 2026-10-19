@@ -86,3 +86,21 @@ describe('TmdbClient', () => {
     expect(r.data[0]!.id).toBe(9);
   });
 });
+
+describe('listes TMDB (catalogue par pays)', () => {
+  const reponse = (body: unknown) => new Response(JSON.stringify(body), { status: 200 });
+  it('genres déduits des identifiants, anime japonais et adultes exclus', async () => {
+    let url = '';
+    const c = new TmdbClient('cle', async u => { url = String(u); return reponse({ results: [
+      { id: 1, title: 'Polar', genre_ids: [80, 53], original_language: 'fr' },
+      { id: 2, title: 'Anime', genre_ids: [16, 28], original_language: 'ja' },
+      { id: 3, title: 'Pixar', genre_ids: [16, 10751], original_language: 'en' },
+      { id: 4, title: 'X', adult: true },
+    ] }); });
+    const r = await c.liste('MOVIE', 'discover/movie', { with_original_language: 'fr', watch_region: 'FR' });
+    expect(r.data.map(m => m.id)).toEqual([1, 3]);
+    expect(r.data[0]!.genres).toEqual(['Crime', 'Thriller']);
+    expect(url).toContain('with_original_language=fr');
+    expect(url).toContain('watch_region=FR');
+  });
+});

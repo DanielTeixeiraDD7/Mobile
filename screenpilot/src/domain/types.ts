@@ -89,7 +89,12 @@ export interface Settings {
   /** Objectif : temps d'écran maximum par semaine (minutes), null = aucun. */
   weeklyGoal: number | null;
   theme: 'auto' | 'clair' | 'sombre';
+  /** Pays pour le catalogue (sorties au cinéma, streaming, cinéma local). Absent = déduit de la langue du téléphone. */
+  pays?: Pays;
 }
+
+export const PAYS = ['FR', 'PT', 'BE', 'CH', 'CA'] as const;
+export type Pays = (typeof PAYS)[number];
 
 export const DEFAULT_SETTINGS: Settings = {
   titleLanguage: 'romaji',
