@@ -1,0 +1,1 @@
+import{D as e,R as t,_ as n,b as r,k as i,w as a}from"#entry";var o={class:`mx-auto max-w-3xl px-4 pt-10`},s={class:`prose-site`},c={class:`font-titre text-4xl font-extrabold tracking-tight`},l=a({__name:`GabaritTexte`,props:{titre:{}},setup(a){return(l,u)=>(e(),r(`div`,o,[n(`article`,s,[n(`h1`,c,t(a.titre),1),i(l.$slots,`default`)])]))}});export{l as t};
