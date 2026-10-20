@@ -1,0 +1,4 @@
+:HL["/Mobile/apercu-b/_next/static/chunks/3n-56p0t0j0q8.css","style"]
+2:[["children",{"s":"__PAGE__","h":160}]]
+1:[["children",{"s":"/_not-found","h":96,"c":"$Q2"}]]
+0:{"b":"MxzUZ7vS_aaXjaWAq5Z5F","t":{"t":{"s":"","h":80,"c":"$Q1"}}}

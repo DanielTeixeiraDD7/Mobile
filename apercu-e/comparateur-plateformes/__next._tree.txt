@@ -1,0 +1,6 @@
+:HL["/Mobile/apercu-e/_next/static/chunks/2_z_khebeszly.css","style"]
+:HL["/Mobile/apercu-e/_next/static/media/017d9bea37084d9b-s.p.41rroleoq1br7.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/Mobile/apercu-e/_next/static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+2:[["children",{"s":"__PAGE__","h":160}]]
+1:[["children",{"s":"comparateur-plateformes","h":96,"c":"$Q2"}]]
+0:{"b":"Nio00x3Cxtrm4zUN7SszJ","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
