@@ -40,7 +40,7 @@ const rows: Row[] = [
 
   ['Feu Follet', C, 'SPECTRE', 35, 15, 'POISON', 5, 'Égarement', 'wisp', "Une lueur bleue au-dessus du marais. Suis-la, et le marais te gardera."],
   ['Âme Errante', C, 'SPECTRE', 45, 13, 'LAST_WORDS', 10, 'Soupir', 'ghost', 'Elle cherche une porte qui n’existe plus, dans une maison démolie depuis un siècle.'],
-  ['Poltergeist', C, 'SPECTRE', 40, 15, 'STUN', 20, 'Vaisselle volante', 'ghost', "Les assiettes tremblent, les portes claquent. Il n'est pas méchant, seulement très, très en colère."],
+  ['Poltergeist', C, 'SPECTRE', 40, 15, 'STUN', 20, 'Vaisselle volante', 'sheet', "Les assiettes tremblent, les portes claquent. Il n'est pas méchant, seulement très, très en colère."],
   ['Corbeau Funèbre', C, 'SPECTRE', 38, 16, 'CURSE', 3, 'Plus jamais', 'raven', "Perché sur le buste de marbre, il ne connaît qu'un mot. C'est le seul qui compte."],
   ['Yūrei du Puits', U, 'SPECTRE', 60, 21, 'POISON', 7, 'Assiettes comptées', 'ghost', 'Chaque nuit, elle compte neuf assiettes dans le puits. Il en manque toujours une.'],
   ['La Llorona', U, 'SPECTRE', 64, 22, 'CURSE', 5, 'Lamentation', 'ghost', 'Ses pleurs remontent le fleuve. Les enfants rentrent avant la nuit pour ne pas les entendre.'],
