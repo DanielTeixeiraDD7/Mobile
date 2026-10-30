@@ -95,7 +95,7 @@ router.get('/packs', async (_req, res) => {
 });
 
 router.put('/packs/:code/rates', async (req, res) => {
-  const { slots } = body(z.object({ slots: z.array(z.record(z.enum(RARITIES), z.number().int().min(0).max(100_000))).min(1).max(10) }), req.body);
+  const { slots } = body(z.object({ slots: z.array(z.partialRecord(z.enum(RARITIES), z.number().int().min(0).max(100_000))).min(1).max(10) }), req.body);
   const pack = await prisma.packType.findUnique({ where: { code: String(req.params.code) } });
   if (!pack) throw notFound();
   await transaction(async tx => {

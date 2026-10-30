@@ -1,0 +1,1 @@
+import{H as e,W as t}from"./runtime-core.esm-bundler-oFlwsPOL.js";function n(n=1e3){let r=t(Date.now()),i=setInterval(()=>{r.value=Date.now()},n);return e(()=>clearInterval(i)),r}export{n as t};
