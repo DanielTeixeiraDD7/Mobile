@@ -3,7 +3,7 @@ import { FACTION_COLOR, RARITY_COLOR, rarityRank, type CardDTO, type Faction } f
 import { computed, useId } from 'vue';
 import { BACKDROPS, DETAILS, MOON, SILHOUETTES } from '@/lib/art';
 
-const props = defineProps<{ card: Pick<CardDTO, 'faction' | 'rarity' | 'silhouette' | 'variant' | 'number' | 'imageUrl' | 'name'>; hq?: boolean }>();
+const props = defineProps<{ card: Pick<CardDTO, 'faction' | 'rarity' | 'silhouette' | 'variant' | 'number' | 'imageUrl' | 'name'>; hq?: boolean; full?: boolean }>();
 const id = useId().replace(/[^a-zA-Z0-9]/g, '');
 const u = (n: string) => `url(#${n}${id})`;
 
@@ -57,7 +57,11 @@ const rays = computed(() => {
 </script>
 
 <template>
-  <img v-if="card.imageUrl" class="art-img" :src="card.imageUrl" :alt="card.name" loading="lazy" />
+  <div v-if="card.imageUrl && full" class="art-full">
+    <img class="bg" :src="card.imageUrl" alt="" aria-hidden="true" loading="lazy" />
+    <img class="fg" :src="card.imageUrl" :alt="card.name" loading="lazy" />
+  </div>
+  <img v-else-if="card.imageUrl" class="art-img" :src="card.imageUrl" :alt="card.name" loading="lazy" />
   <svg v-else class="art-svg" viewBox="0 0 200 240" preserveAspectRatio="xMidYMid slice" role="img" :aria-label="card.name">
     <defs>
       <linearGradient :id="`sky${id}`" x1="0" y1="0" x2="0" y2="1">
@@ -192,4 +196,9 @@ const rays = computed(() => {
 
 <style scoped>
 .art-svg, .art-img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.art-img { object-position: 50% 8%; }
+.art-full { position: relative; width: 100%; height: 100%; overflow: hidden; background: #000; }
+.art-full img { position: absolute; left: 0; width: 100%; object-fit: cover; }
+.art-full .bg { top: 0; height: 100%; object-position: 50% 0; filter: blur(10px) brightness(.55); transform: scale(1.15); }
+.art-full .fg { top: 11%; height: 89%; object-position: 50% 0; -webkit-mask-image: linear-gradient(180deg, transparent, #000 6%); mask-image: linear-gradient(180deg, transparent, #000 6%); }
 </style>

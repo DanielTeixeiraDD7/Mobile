@@ -82,6 +82,9 @@ const rows: Row[] = [
   ['Cthulhu, l’Éveil', S, 'ABIME', 190, 50, 'SPLASH', 16, 'Quand les étoiles s’alignent', 'cthulhu', "Les étoiles sont alignées. R'lyeh remonte. Le rêveur ouvre enfin les yeux.", { variant: 'ALTERNATE', craftable: false }],
 ];
 
+/** Cartes disposant d'une illustration (fichier `cards/<code>.webp` servi par le client). */
+export const ILLUSTRATED = new Set(['NE1-009']);
+
 export function abilityText(key: AbilityKey, v: number): string {
   switch (key) {
     case 'DRAIN': return `Récupère ${v} PV à chaque attaque.`;
@@ -105,5 +108,5 @@ export const SET1_CARDS: CardDef[] = rows.map(([name, rarity, faction, hp, attac
   form: o.form ?? null,
   pairCode: o.pair ?? null,
   craftable: o.craftable ?? true,
-  imageUrl: null,
+  imageUrl: ILLUSTRATED.has(`${SET1.code}-${String(i + 1).padStart(3, '0')}`) ? `cards/${SET1.code}-${String(i + 1).padStart(3, '0')}.webp` : null,
 }));

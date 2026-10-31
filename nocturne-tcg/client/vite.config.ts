@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
 import vue from '@vitejs/plugin-vue';
 import type { Plugin } from 'vite';
@@ -17,7 +17,8 @@ function serviceWorker(): Plugin {
         const it = bundle[f]!;
         hash.update(f).update(it.type === 'chunk' ? it.code : String(it.source));
       }
-      const assets = ['./', ...files, 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
+      const cards = readdirSync('public/cards').map(f => `cards/${f}`);
+      const assets = ['./', ...files, ...cards, 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
       const source = readFileSync('src/sw/sw.js', 'utf8')
         .replace('__VERSION__', 'nocturne-' + hash.digest('hex').slice(0, 10))
         .replace('__ASSETS__', JSON.stringify([...new Set(assets)]));

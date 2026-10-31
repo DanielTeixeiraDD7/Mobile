@@ -34,6 +34,7 @@ const CORNERS = ['scale(.62)', 'matrix(-1 0 0 1 250 0) scale(.62)', 'matrix(1 0 
 
 const rank = computed(() => rarityRank(props.card.rarity));
 const metal = computed(() => FRAME_METAL[props.frame ?? ''] ?? METAL[props.card.rarity]);
+const full = computed(() => !!props.card.imageUrl);
 const shiny = computed(() => props.card.variant !== 'NORMAL' || rank.value >= 4);
 const locked = computed(() => props.qty === 0);
 const style = ref<Record<string, string>>({});
@@ -49,7 +50,7 @@ const leave = () => { style.value = {}; };
 </script>
 
 <template>
-  <div class="card" :class="[card.rarity.toLowerCase(), `v-${card.variant.toLowerCase()}`, { locked, detail, shiny }]" :style="vars" @pointermove="move" @pointerleave="leave">
+  <div class="card" :class="[card.rarity.toLowerCase(), `v-${card.variant.toLowerCase()}`, { locked, detail, shiny, full }]" :style="vars" @pointermove="move" @pointerleave="leave">
    <div class="body">
     <svg class="orn" viewBox="0 0 250 350" preserveAspectRatio="none" aria-hidden="true">
       <g fill="none" stroke="var(--hi)" stroke-width="1.6" stroke-linecap="round" opacity=".9">
@@ -74,10 +75,11 @@ const leave = () => { style.value = {}; };
       </header>
 
       <div class="art">
-        <CardArt :card="card" :hq="hq || detail" />
+        <CardArt :card="card" :hq="hq || detail" :full="full" />
         <span v-if="card.form" class="tag form">{{ card.form === 'HUMAN' ? 'Forme humaine' : 'Forme monstre' }}</span>
         <span v-if="card.variant !== 'NORMAL'" class="tag variant">{{ card.variant === 'HOLO' ? 'Holo' : 'Alternative' }}</span>
       </div>
+      <div v-if="full" class="fade" />
 
       <div class="typeline">
         <span class="faction"><svg viewBox="0 0 24 24"><path :d="EMBLEM[card.faction]" fill-rule="evenodd" /></svg>{{ FACTION_LABEL[card.faction] }}</span>
@@ -175,5 +177,14 @@ footer { display: flex; justify-content: space-between; align-items: center; pad
 .locked .body { filter: grayscale(1) brightness(.35); }
 .qty { position: absolute; z-index: 4; right: -1.5cqw; top: -1.5cqw; min-width: 11cqw; padding: 1cqw 2.2cqw; border-radius: 6cqw; background: #e0315a; color: #fff; font-size: 5cqw; font-weight: 700; text-align: center; box-shadow: 0 1cqw 3cqw #000a; }
 .new { position: absolute; z-index: 4; left: 50%; bottom: -2cqw; transform: translateX(-50%); padding: 1cqw 3cqw; border-radius: 6cqw; background: #f0b43c; color: #1a0f00; font-size: 4.4cqw; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; box-shadow: 0 0 4cqw #f0b43c88; }
+/* Full art : l'illustration couvre la carte, l'interface flotte par-dessus. */
+.full .art { position: absolute; inset: 0; margin: 0; border-radius: inherit; box-shadow: none; flex: none; }
+.full .tag { top: 17cqw; }
+.full .fade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, #000a 0%, transparent 18%, transparent 52%, #000d 78%, #000 100%); }
+.full .plate { position: relative; z-index: 1; background: linear-gradient(180deg, #0c0811e6, #0c0811b3); backdrop-filter: blur(3px); box-shadow: inset 0 .4cqw 0 #ffffff14, 0 0 0 .4cqw color-mix(in srgb, var(--mid) 70%, transparent); }
+.full .typeline { position: relative; z-index: 1; margin-top: auto; background: linear-gradient(90deg, color-mix(in srgb, var(--mid) 40%, #0c0811cc), #0c081199 70%); backdrop-filter: blur(3px); }
+.full .ability { position: relative; z-index: 1; flex: none; background: #0c0811b3; backdrop-filter: blur(4px); }
+.full footer { position: relative; z-index: 1; margin-top: 0; }
+.full .num { color: #cfc3dd; text-shadow: 0 .3cqw .6cqw #000; }
 @media (prefers-reduced-motion: reduce) { .sheen { animation: none; } .card { transition: none; } }
 </style>

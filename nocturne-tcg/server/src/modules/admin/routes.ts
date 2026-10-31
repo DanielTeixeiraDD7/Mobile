@@ -80,7 +80,7 @@ router.get('/cards', async (_req, res) => {
 router.patch('/cards/:id', async (req, res) => {
   const data = body(z.object({
     name: z.string().min(1).max(60), hp: z.number().int().min(1).max(500), attack: z.number().int().min(0).max(200),
-    lore: z.string().max(600), imageUrl: z.string().url().max(500).nullable(), active: z.boolean(), craftable: z.boolean(),
+    lore: z.string().max(600), imageUrl: z.string().max(500).regex(/^(https:\/\/|cards\/)/, 'URL https:// ou chemin cards/…').nullable(), active: z.boolean(), craftable: z.boolean(),
     rarity: z.enum(RARITIES), abilityValue: z.number().int().min(0).max(100),
   }).partial(), req.body);
   const card = await prisma.card.update({ where: { id: String(req.params.id) }, data });
