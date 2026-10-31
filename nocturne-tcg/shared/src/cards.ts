@@ -102,7 +102,7 @@ for (const [base, variant, rarity, lore] of VERSIONS) {
 
 
 /** Illustrations disponibles : code de carte → fichier dans `client/public/cards/`. */
-export const ILLUSTRATIONS: Record<string, string> = { 'NE1-001': 'NE1-001.webp', 'NE1-002': 'NE1-002.webp', 'NE1-009': 'NE1-009.webp', 'NE1-065': 'NE1-009.webp' };
+export const ILLUSTRATIONS: Record<string, string> = { 'NE1-001': 'NE1-001.webp', 'NE1-002': 'NE1-002.webp', 'NE1-003': 'NE1-003.webp', 'NE1-009': 'NE1-009.webp', 'NE1-065': 'NE1-009.webp' };
 
 export function abilityText(key: AbilityKey, v: number): string {
   switch (key) {
