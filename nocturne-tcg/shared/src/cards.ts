@@ -102,7 +102,7 @@ for (const [base, variant, rarity, lore] of VERSIONS) {
 
 
 /** Illustrations disponibles : code de carte → fichier dans `client/public/cards/`. */
-export const ILLUSTRATIONS: Record<string, string> = { 'NE1-001': 'NE1-001.webp', 'NE1-002': 'NE1-002.webp', 'NE1-003': 'NE1-003.webp', 'NE1-004': 'NE1-004.webp', 'NE1-005': 'NE1-005.webp', 'NE1-006': 'NE1-006.webp', 'NE1-007': 'NE1-007.webp', 'NE1-008': 'NE1-008.webp', 'NE1-009': 'NE1-009.webp', 'NE1-010': 'NE1-010.webp', 'NE1-011': 'NE1-011.webp', 'NE1-016': 'NE1-016.webp', 'NE1-017': 'NE1-017.webp', 'NE1-019': 'NE1-019.webp', 'NE1-065': 'NE1-009.webp' };
+export const ILLUSTRATIONS: Record<string, string> = { 'NE1-001': 'NE1-001.webp', 'NE1-002': 'NE1-002.webp', 'NE1-003': 'NE1-003.webp', 'NE1-004': 'NE1-004.webp', 'NE1-005': 'NE1-005.webp', 'NE1-006': 'NE1-006.webp', 'NE1-007': 'NE1-007.webp', 'NE1-008': 'NE1-008.webp', 'NE1-009': 'NE1-009.webp', 'NE1-010': 'NE1-010-f2cc6093.webp', 'NE1-011': 'NE1-011.webp', 'NE1-012': 'NE1-012-c78d0a91.webp', 'NE1-016': 'NE1-016.webp', 'NE1-017': 'NE1-017.webp', 'NE1-019': 'NE1-019.webp', 'NE1-065': 'NE1-009.webp' };
 
 export function abilityText(key: AbilityKey, v: number): string {
   switch (key) {
