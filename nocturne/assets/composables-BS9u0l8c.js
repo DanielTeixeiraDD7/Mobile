@@ -1,1 +1,0 @@
-import{W as e}from"./runtime-core.esm-bundler-oFlwsPOL.js";import{n as t,r as n}from"./session-BgoE38mL.js";function r(){let r=e([]),i=e(!0),a=async()=>{try{r.value=await n.banners()}catch(e){t().error(e)}finally{i.value=!1}};return a(),{banners:r,loading:i,load:a}}export{r as t};
