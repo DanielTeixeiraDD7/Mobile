@@ -13,7 +13,7 @@ export async function allCards(): Promise<CardDTO[]> {
     id: c.id, code: c.code, set: c.set.code, number: c.number, name: c.name, rarity: c.rarity, faction: c.faction,
     hp: c.hp, attack: c.attack, abilityKey: c.abilityKey as CardDTO['abilityKey'], abilityName: c.abilityName, abilityValue: c.abilityValue,
     abilityText: abilityText(c.abilityKey as CardDTO['abilityKey'], c.abilityValue), lore: c.lore, silhouette: c.silhouette,
-    variant: c.variant, form: c.form, pairCode: c.pairCode, craftable: c.craftable, imageUrl: c.imageUrl,
+    variant: c.variant, form: c.form, pairCode: c.pairCode, baseCode: c.baseCode, craftable: c.craftable, imageUrl: c.imageUrl,
   }));
   cache = { at: Date.now(), cards };
   return cards;

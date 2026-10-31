@@ -4,7 +4,7 @@ export type Rarity = (typeof RARITIES)[number];
 export const FACTIONS = ['SANG', 'CROC', 'ABIME', 'SPECTRE', 'ALCHIMIE', 'CRYPTIDE', 'MYTHE'] as const;
 export type Faction = (typeof FACTIONS)[number];
 
-export const VARIANTS = ['NORMAL', 'HOLO', 'ALTERNATE'] as const;
+export const VARIANTS = ['NORMAL', 'HOLO', 'FULL_ART', 'ALTERNATE'] as const;
 export type Variant = (typeof VARIANTS)[number];
 
 export type Form = 'HUMAN' | 'MONSTER';
@@ -35,7 +35,11 @@ export const FACTION_COLOR: Record<Faction, [string, string]> = {
   MYTHE: ['#5a4a14', '#140f02'],
 };
 
-export const VARIANT_LABEL: Record<Variant, string> = { NORMAL: 'Normale', HOLO: 'Holo', ALTERNATE: 'Alternative' };
+export const VARIANT_LABEL: Record<Variant, string> = { NORMAL: 'Classique', HOLO: 'Holo', FULL_ART: 'Full Art', ALTERNATE: 'Couronne' };
+
+/** Exemplaires « reverse holo » : même carte, finition holographique, clé de collection séparée. */
+export const reverseKey = (cardId: string) => `${cardId}#R`;
+export const REVERSE_LABEL = 'Reverse';
 
 export const ABILITY_LABEL: Record<AbilityKey, string> = {
   DRAIN: 'Drain', FURY: 'Furie', SHIELD: 'Bouclier', POISON: 'Poison', STUN: 'Effroi',
@@ -61,6 +65,8 @@ export interface CardDef {
   variant: Variant;
   form: Form | null;
   pairCode: string | null;
+  /** Carte classique dont celle-ci est une autre version (Full Art, Couronne). */
+  baseCode: string | null;
   craftable: boolean;
   imageUrl: string | null;
 }

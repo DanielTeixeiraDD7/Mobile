@@ -90,6 +90,7 @@ export function act(userId: string, tradeId: string, action: Act): Promise<Trade
         const move = async (from: string, to: string, items: typeof give) => {
           for (const i of items) {
             await tx.userCard.update({ where: { userId_cardId: { userId: from, cardId: i.cardId } }, data: { quantity: { decrement: i.quantity } } });
+            await tx.$executeRaw`UPDATE "UserCard" SET "reverseQty" = LEAST("reverseQty", quantity) WHERE "userId" = ${from} AND "cardId" = ${i.cardId}`;
             await tx.userCard.upsert({ where: { userId_cardId: { userId: to, cardId: i.cardId } }, create: { userId: to, cardId: i.cardId, quantity: i.quantity }, update: { quantity: { increment: i.quantity } } });
           }
         };

@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { FACTION_LABEL, RARITY_LABEL, rarityRank, type CardDTO, type Faction, type Rarity } from '@nocturne/shared';
+import { FACTION_LABEL, RARITY_LABEL, VARIANT_LABEL, rarityRank, type CardDTO, type Faction, type Rarity } from '@nocturne/shared';
 import { computed, ref } from 'vue';
 import CardArt from './CardArt.vue';
 
-const props = withDefaults(defineProps<{ card: CardDTO; detail?: boolean; qty?: number | null; isNew?: boolean; tilt?: boolean; frame?: string | null; hq?: boolean }>(), {
-  detail: false, qty: null, isNew: false, tilt: false, frame: null, hq: false,
+const props = withDefaults(defineProps<{ card: CardDTO; detail?: boolean; qty?: number | null; isNew?: boolean; tilt?: boolean; frame?: string | null; hq?: boolean; reverse?: boolean }>(), {
+  detail: false, qty: null, isNew: false, tilt: false, frame: null, hq: false, reverse: false,
 });
 
 /** Métal du cadre par rareté : [reflet, teinte, ombre]. */
@@ -33,9 +33,10 @@ const EMBLEM: Record<Faction, string> = {
 const CORNERS = ['scale(.62)', 'matrix(-1 0 0 1 250 0) scale(.62)', 'matrix(1 0 0 -1 0 350) scale(.62)', 'matrix(-1 0 0 -1 250 350) scale(.62)'];
 
 const rank = computed(() => rarityRank(props.card.rarity));
-const metal = computed(() => FRAME_METAL[props.frame ?? ''] ?? METAL[props.card.rarity]);
-const full = computed(() => !!props.card.imageUrl);
-const shiny = computed(() => props.card.variant !== 'NORMAL' || rank.value >= 4);
+const crown = computed(() => props.card.variant === 'ALTERNATE');
+const metal = computed(() => FRAME_METAL[props.frame ?? ''] ?? (crown.value ? METAL.LEGENDARY : METAL[props.card.rarity]));
+const full = computed(() => props.card.variant !== 'NORMAL');
+const shiny = computed(() => props.card.variant !== 'NORMAL' || rank.value >= 4 || props.reverse);
 const locked = computed(() => props.qty === 0);
 const style = ref<Record<string, string>>({});
 const vars = computed(() => ({ '--hi': metal.value[0], '--mid': metal.value[1], '--lo': metal.value[2], '--rc': METAL[props.card.rarity][1], ...style.value }));
@@ -50,7 +51,7 @@ const leave = () => { style.value = {}; };
 </script>
 
 <template>
-  <div class="card" :class="[card.rarity.toLowerCase(), `v-${card.variant.toLowerCase()}`, { locked, detail, shiny, full }]" :style="vars" @pointermove="move" @pointerleave="leave">
+  <div class="card" :class="[card.rarity.toLowerCase(), `v-${card.variant.toLowerCase()}`, { locked, detail, shiny, full, crown, reverse }]" :style="vars" @pointermove="move" @pointerleave="leave">
    <div class="body">
     <svg class="orn" viewBox="0 0 250 350" preserveAspectRatio="none" aria-hidden="true">
       <g fill="none" stroke="var(--hi)" stroke-width="1.6" stroke-linecap="round" opacity=".9">
@@ -77,7 +78,8 @@ const leave = () => { style.value = {}; };
       <div class="art">
         <CardArt :card="card" :hq="hq || detail" :full="full" />
         <span v-if="card.form" class="tag form">{{ card.form === 'HUMAN' ? 'Forme humaine' : 'Forme monstre' }}</span>
-        <span v-if="card.variant !== 'NORMAL'" class="tag variant">{{ card.variant === 'HOLO' ? 'Holo' : 'Alternative' }}</span>
+        <span v-if="card.variant !== 'NORMAL'" class="tag variant">{{ VARIANT_LABEL[card.variant] }}</span>
+        <span v-else-if="reverse" class="tag variant">Reverse</span>
       </div>
       <div v-if="full" class="fade" />
 
@@ -100,6 +102,7 @@ const leave = () => { style.value = {}; };
       </footer>
     </div>
 
+    <svg v-if="crown" class="crown-mark" viewBox="0 0 40 24" aria-hidden="true"><path d="M2 20 L5 6 L13 13 L20 2 L27 13 L35 6 L38 20 Z" /><rect x="2" y="20" width="36" height="3.5" rx="1" /></svg>
     <div v-if="shiny && !locked" class="sheen" />
     <span v-if="qty && qty > 1" class="qty">×{{ qty }}</span>
     <span v-if="isNew" class="new">Nouveau</span>
@@ -191,5 +194,21 @@ footer { display: flex; justify-content: space-between; align-items: center; pad
 .full .ability { position: relative; z-index: 1; flex: none; margin-top: 1cqw; background: none; border: 0; padding: 0 3cqw; text-shadow: 0 .3cqw .8cqw #000; }
 .full footer { position: relative; z-index: 1; margin-top: 0; }
 .full .num { color: #e2d8ee; text-shadow: 0 .3cqw .6cqw #000; }
-@media (prefers-reduced-motion: reduce) { .sheen { animation: none; } .card { transition: none; } }
+/* Reverse holo : la carte classique, cadre et panneaux holographiques (l'illustration reste nette). */
+.reverse .body { background: linear-gradient(120deg, #ffd6f0, #9ee9ff 20%, #fff3a8 40%, #c9b4ff 60%, #a8ffd8 80%, #ffd6f0) 0 0 / 300% 300%; animation: foil 6s linear infinite; }
+.reverse .inner { background: repeating-linear-gradient(135deg, #ffffff10 0 2cqw, #ff9ee612 2cqw 4cqw, #8fe6ff12 4cqw 6cqw, #fff59a10 6cqw 8cqw), radial-gradient(ellipse at 50% 0%, #2a1d36, #0c0811 70%); }
+.reverse .plate, .reverse .typeline, .reverse .ability { background-image: linear-gradient(120deg, #ff9ee622, #8fe6ff22 35%, #fff59a22 70%, #ff9ee622); background-size: 300% 300%; animation: foil 6s linear infinite; }
+.reverse .sheen { opacity: .35; }
+@keyframes foil { to { background-position: 300% 300%; } }
+
+/* Couronne : full art, cadre or ciselé, reflet doré, couronne au sommet. */
+.crown .body { padding: 2.2cqw; background: linear-gradient(135deg, #fff4c4, #f0b43c 18%, #6e4206 38%, #ffe08a 52%, #b8780e 70%, #fff4c4 88%, #f0b43c); box-shadow: inset 0 0 0 .5cqw #fff8, inset 0 0 0 1.1cqw #0006, 0 0 9cqw #f0b43c88, 0 1.6cqw 5cqw #000b; }
+.crown .orn { display: block; }
+.crown .inner { border-radius: 3cqw; box-shadow: 0 0 0 .5cqw #6e4206, 0 0 0 .9cqw #ffe08a; }
+.crown .name { color: #ffe9a8; }
+.crown .sheen { mix-blend-mode: overlay; opacity: .8; background: linear-gradient(110deg, transparent 30%, #fff6c8aa 45%, #ffd36e66 52%, transparent 66%) 0 0 / 250% 100%; animation: goldsweep 3.6s ease-in-out infinite; }
+.crown-mark { position: absolute; z-index: 5; top: -.6cqw; left: 50%; width: 15cqw; transform: translateX(-50%); fill: #ffd36e; stroke: #6e4206; stroke-width: 1.2; filter: drop-shadow(0 0 2cqw #f0b43c); }
+@keyframes goldsweep { 0% { background-position: 150% 0; } 60%, 100% { background-position: -100% 0; } }
+
+@media (prefers-reduced-motion: reduce) { .sheen, .reverse .body, .reverse .plate, .reverse .typeline, .reverse .ability { animation: none; } .card { transition: none; } }
 </style>

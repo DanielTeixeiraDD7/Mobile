@@ -22,6 +22,7 @@ onMounted(async () => { try { pulls.value = await api.pulls(); } catch (e) { use
         <ul>
           <li v-for="c in p.cards" :key="c.slot">
             <RouterLink :to="`/carte/${c.cardId}`" :style="{ color: RARITY_COLOR[c.rarity], fontWeight: rarityRank(c.rarity) >= 3 ? 700 : 400 }">{{ s.card(c.cardId)?.name ?? c.cardId }}</RouterLink>
+            <span v-if="c.reverse" class="badge rev">Reverse</span>
             <span v-if="c.isNew" class="badge">Nouveau</span>
           </li>
         </ul>
@@ -36,5 +37,6 @@ onMounted(async () => { try { pulls.value = await api.pulls(); } catch (e) { use
 ul { list-style: none; padding: 0; margin: 8px 0 0; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .9rem; }
 li a { text-decoration: none; }
 li .badge { margin-left: 4px; color: var(--gold); font-size: .65rem; }
+li .badge.rev { color: #9ee9ff; }
 .pity { color: var(--gold); }
 </style>

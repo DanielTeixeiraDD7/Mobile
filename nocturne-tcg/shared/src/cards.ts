@@ -2,7 +2,7 @@ import type { AbilityKey, CardDef, Faction, Form, Rarity, Variant } from './type
 
 export const SET1 = { code: 'NE1', name: 'Nuit Éternelle', releasedAt: '2026-10-01T00:00:00Z' };
 
-interface Opts { variant?: Variant; form?: Form; pair?: string; craftable?: boolean }
+interface Opts { variant?: Variant; form?: Form; pair?: string; craftable?: boolean; base?: number }
 
 type Row = [name: string, rarity: Rarity, faction: Faction, hp: number, atk: number, key: AbilityKey, value: number, abilityName: string, silhouette: string, lore: string, opts?: Opts];
 
@@ -19,7 +19,7 @@ const rows: Row[] = [
   ['Carmilla Karnstein', R, 'SANG', 85, 28, 'DRAIN', 8, 'Baiser de Styrie', 'vampiress', "Une invitée languide, un portrait vieux de deux siècles et un nom dont les lettres se mélangent."],
   ['Comte Dracula', R, 'SANG', 90, 30, 'STUN', 30, 'Regard du Comte', 'vampire', "Hôte courtois des Carpates, il parle six langues et ne projette aucune ombre.", { form: 'HUMAN', pair: 'DRAC' }],
   ['Comtesse Báthory', R, 'SANG', 92, 29, 'REGEN', 9, 'Bain écarlate', 'vampiress', "Elle a cru que le sang des autres effacerait les années. Les miroirs du château ont fini par se briser."],
-  ['Carmilla, Rose de Sang', E, 'SANG', 110, 38, 'DRAIN', 14, 'Étreinte éternelle', 'vampiress', 'Les pétales tombent en spirale autour d’elle : chacun est une goutte de vie volée.', { variant: 'HOLO', craftable: false }],
+  ['Carmilla, Rose de Sang', E, 'SANG', 110, 38, 'DRAIN', 14, 'Étreinte éternelle', 'vampiress', 'Les pétales tombent en spirale autour d’elle : chacun est une goutte de vie volée.', { variant: 'FULL_ART', craftable: false, base: 8 }],
   ['Dracula, Bête de la Nuit', L, 'SANG', 160, 50, 'DRAIN', 18, 'Nuée pourpre', 'batlord', "Quand le comte jette son masque d'homme, la nuit tout entière bat des ailes.", { form: 'MONSTER', pair: 'DRAC' }],
 
   ['Loup des Brumes', C, 'CROC', 50, 16, 'FURY', 6, 'Hurlement', 'wolf', 'On ne le voit jamais arriver. On entend seulement le brouillard grogner.'],
@@ -78,12 +78,31 @@ const rows: Row[] = [
   ['Bigfoot', R, 'CRYPTIDE', 110, 29, 'SHIELD', 9, 'Empreinte géante', 'ape', 'Deux mètres cinquante de fourrure et une timidité légendaire. Toutes ses photos sont floues.'],
   ['Mothman', E, 'CRYPTIDE', 112, 40, 'STUN', 35, 'Yeux rouges', 'moth', "Vu au-dessus d'un pont de Virginie-Occidentale juste avant la catastrophe. Il prévient, il ne cause pas."],
 
-  ['Dracula, Nuit Sans Fin', S, 'SANG', 180, 52, 'DRAIN', 22, 'Règne écarlate', 'batlord', "La version que l'on raconte à voix basse : un comte qui n'a jamais dormi, et une nuit qui n'a jamais fini.", { variant: 'ALTERNATE', craftable: false }],
-  ['Cthulhu, l’Éveil', S, 'ABIME', 190, 50, 'SPLASH', 16, 'Quand les étoiles s’alignent', 'cthulhu', "Les étoiles sont alignées. R'lyeh remonte. Le rêveur ouvre enfin les yeux.", { variant: 'ALTERNATE', craftable: false }],
+  ['Dracula, Nuit Sans Fin', S, 'SANG', 180, 52, 'DRAIN', 22, 'Règne écarlate', 'batlord', "La version que l'on raconte à voix basse : un comte qui n'a jamais dormi, et une nuit qui n'a jamais fini.", { variant: 'ALTERNATE', craftable: false, base: 12 }],
+  ['Cthulhu, l’Éveil', S, 'ABIME', 190, 50, 'SPLASH', 16, 'Quand les étoiles s’alignent', 'cthulhu', "Les étoiles sont alignées. R'lyeh remonte. Le rêveur ouvre enfin les yeux.", { variant: 'ALTERNATE', craftable: false, base: 26 }],
 ];
 
-/** Cartes disposant d'une illustration (fichier `cards/<code>.webp` servi par le client). */
-export const ILLUSTRATED = new Set(['NE1-009']);
+/** Autres versions d'une carte classique : mêmes stats, illustration et rareté différentes. */
+const VERSIONS: [base: number, variant: Variant, rarity: Rarity, lore: string][] = [
+  [9, 'FULL_ART', E, 'Le comte tend la main. Accepter l’invitation, c’est déjà lui appartenir.'],
+  [16, 'FULL_ART', E, 'Dans la tempête de neige, seuls ses bois dépassent des sapins. Puis plus rien.'],
+  [33, 'FULL_ART', E, 'Sur la lande irlandaise, son cri traverse les murs et les années.'],
+  [34, 'FULL_ART', E, 'Le rideau se lève sur sa dernière représentation. Le public ne repartira pas.'],
+  [53, 'FULL_ART', E, 'L’isba s’est arrêtée de marcher. La vieille t’attendait.'],
+  [61, 'FULL_ART', E, 'Une silhouette immense entre les séquoias, qui te regarde plus longtemps que tu ne la regardes.'],
+  [36, 'FULL_ART', L, 'Les phares éclairent une robe blanche au bord de la route. Elle lève le pouce.'],
+  [62, 'FULL_ART', L, 'Les ailes déployées au-dessus du pont, il fixe la ville de ses yeux rouges.'],
+  [37, 'ALTERNATE', S, 'Couronné de faux et de lanternes, le serviteur de la Mort parcourt toute la Bretagne en une nuit.'],
+  [55, 'ALTERNATE', S, 'Le temple d’or s’effondre autour d’elle. Ceux qui l’ont punie sont devenus statues.'],
+];
+for (const [base, variant, rarity, lore] of VERSIONS) {
+  const b = rows[base - 1]!;
+  rows.push([b[0], rarity, b[2], b[3], b[4], b[5], b[6], b[7], b[8], lore, { ...b[10], variant, craftable: false, base }]);
+}
+
+
+/** Illustrations disponibles : code de carte → fichier dans `client/public/cards/`. */
+export const ILLUSTRATIONS: Record<string, string> = { 'NE1-009': 'NE1-009.webp', 'NE1-065': 'NE1-009.webp' };
 
 export function abilityText(key: AbilityKey, v: number): string {
   switch (key) {
@@ -100,13 +119,16 @@ export function abilityText(key: AbilityKey, v: number): string {
   }
 }
 
+const codeOf = (n: number) => `${SET1.code}-${String(n).padStart(3, '0')}`;
+
 export const SET1_CARDS: CardDef[] = rows.map(([name, rarity, faction, hp, attack, abilityKey, abilityValue, abilityName, silhouette, lore, o = {}], i) => ({
-  code: `${SET1.code}-${String(i + 1).padStart(3, '0')}`,
+  code: codeOf(i + 1),
   number: i + 1,
   name, rarity, faction, hp, attack, abilityKey, abilityValue, abilityName, silhouette, lore,
   variant: o.variant ?? 'NORMAL',
   form: o.form ?? null,
   pairCode: o.pair ?? null,
+  baseCode: o.base ? codeOf(o.base) : null,
   craftable: o.craftable ?? true,
-  imageUrl: ILLUSTRATED.has(`${SET1.code}-${String(i + 1).padStart(3, '0')}`) ? `cards/${SET1.code}-${String(i + 1).padStart(3, '0')}.webp` : null,
+  imageUrl: ILLUSTRATIONS[codeOf(i + 1)] ? `cards/${ILLUSTRATIONS[codeOf(i + 1)]}` : null,
 }));

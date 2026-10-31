@@ -1,5 +1,5 @@
 import type { Banner, PullSource } from '@prisma/client';
-import { openPack, rateTable, consumeFreePack, type BannerConfig, type BannerDTO, type OpenPackDTO, type PityDTO, type PullDTO, type RatesDTO, type SlotRates } from '@nocturne/shared';
+import { openPack, rateTable, rollReverse, consumeFreePack, type BannerConfig, type BannerDTO, type OpenPackDTO, type PityDTO, type PullDTO, type RatesDTO, type SlotRates } from '@nocturne/shared';
 import { lockUsers, prisma, transaction, type Tx } from '../../db';
 import { bad, forbidden, notFound } from '../../lib/http';
 import { cryptoRng } from '../../lib/rng';
@@ -52,12 +52,12 @@ export async function listBanners(userId: string | null, country: string | null,
 
 export async function bannerRates(bannerId: string): Promise<RatesDTO> {
   const b = await loadBanner(prisma, bannerId);
-  return { bannerId, ...rateTable(await config(prisma, b)) };
+  return { bannerId, reversePercent: b.packType.reverseChance / 1000, ...rateTable(await config(prisma, b)) };
 }
 
-const pullDto = (p: { id: string; bannerId: string; source: PullSource; pity: string | null; createdAt: Date; banner: { name: string }; cards: { slot: number; cardId: string; isNew: boolean; card: { rarity: PullDTO['cards'][number]['rarity'] } }[] }): PullDTO => ({
+const pullDto = (p: { id: string; bannerId: string; source: PullSource; pity: string | null; createdAt: Date; banner: { name: string }; cards: { slot: number; cardId: string; isNew: boolean; reverse: boolean; card: { rarity: PullDTO['cards'][number]['rarity'] } }[] }): PullDTO => ({
   id: p.id, bannerId: p.bannerId, bannerName: p.banner.name, source: p.source, pity: p.pity, createdAt: p.createdAt.toISOString(),
-  cards: [...p.cards].sort((a, b) => a.slot - b.slot).map(c => ({ slot: c.slot, cardId: c.cardId, rarity: c.card.rarity, isNew: c.isNew })),
+  cards: [...p.cards].sort((a, b) => a.slot - b.slot).map(c => ({ slot: c.slot, cardId: c.cardId, rarity: c.card.rarity, isNew: c.isNew, reverse: c.reverse })),
 });
 
 export function open(userId: string, bannerId: string, source: PullSource, now = new Date()): Promise<OpenPackDTO> {
@@ -85,18 +85,26 @@ export function open(userId: string, bannerId: string, source: PullSource, now =
     const result = openPack(await config(tx, banner), pity, cryptoRng);
     const newPity = await tx.pityCounter.update({ where: key, data: { ...result.pity, totalPacks: { increment: 1 } } });
 
-    const owned = new Map((await tx.userCard.findMany({ where: { userId, cardId: { in: result.cards.map(c => c.cardId) } } })).map(c => [c.cardId, c.quantity]));
+    const ids = result.cards.map(c => c.cardId);
+    const owned = new Map((await tx.userCard.findMany({ where: { userId, cardId: { in: ids } } })).map(c => [c.cardId, c.quantity]));
+    const classics = new Set((await tx.card.findMany({ where: { id: { in: ids }, variant: 'NORMAL' }, select: { id: true } })).map(c => c.id));
+    const reverseSlot = rollReverse(result.cards, c => classics.has(c.cardId), banner.packType.reverseChance, cryptoRng);
     const seen = new Set<string>();
     const cards = result.cards.map(c => {
       const isNew = !(owned.get(c.cardId) ?? 0) && !seen.has(c.cardId);
       seen.add(c.cardId);
-      return { ...c, isNew };
+      return { ...c, isNew, reverse: c.slot === reverseSlot };
     });
     for (const c of cards) {
-      await tx.userCard.upsert({ where: { userId_cardId: { userId, cardId: c.cardId } }, create: { userId, cardId: c.cardId, quantity: 1 }, update: { quantity: { increment: 1 } } });
+      const rev = c.reverse ? 1 : 0;
+      await tx.userCard.upsert({
+        where: { userId_cardId: { userId, cardId: c.cardId } },
+        create: { userId, cardId: c.cardId, quantity: 1, reverseQty: rev },
+        update: { quantity: { increment: 1 }, reverseQty: { increment: rev } },
+      });
     }
     const pull = await tx.pull.create({
-      data: { userId, bannerId, source, pity: result.pityTriggered, cards: { create: cards.map(c => ({ slot: c.slot, cardId: c.cardId, isNew: c.isNew })) } },
+      data: { userId, bannerId, source, pity: result.pityTriggered, cards: { create: cards.map(c => ({ slot: c.slot, cardId: c.cardId, isNew: c.isNew, reverse: c.reverse })) } },
       include: { banner: { select: { name: true } }, cards: { include: { card: { select: { rarity: true } } } } },
     });
     await track(tx, userId, 'OPEN_PACKS', 1, now);

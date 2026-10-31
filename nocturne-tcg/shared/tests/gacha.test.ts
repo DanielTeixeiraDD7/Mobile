@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  DEFAULT_SLOTS, RARITIES, SET1_CARDS, atLeast, effectiveWeights, openPack, rateTable, seededRng,
+  DEFAULT_REVERSE_CHANCE, DEFAULT_SLOTS, RARITIES, REVERSE_RARITIES, SET1_CARDS, atLeast, effectiveWeights, openPack, rateTable, rollReverse, seededRng,
   type BannerConfig, type PityState, type Rng,
 } from '../src';
 
@@ -109,5 +109,31 @@ describe('pitié', () => {
     const slots = [...DEFAULT_SLOTS.slice(0, 4), { COMMON: 1 }];
     const r = openPack(cfg({ slots }), { sinceEpic: 9, sinceLegendary: 0 }, alwaysZero);
     expect(atLeast(r.cards[4]!.rarity, 'EPIC')).toBe(true);
+  });
+});
+
+describe('versions et reverse', () => {
+  it('chaque version pointe vers une carte classique du même personnage', () => {
+    for (const c of SET1_CARDS.filter(x => x.baseCode)) {
+      const base = SET1_CARDS.find(x => x.code === c.baseCode)!;
+      expect(base.variant).toBe('NORMAL');
+      expect(c.faction).toBe(base.faction);
+      expect(atLeast(c.rarity, base.rarity) && c.rarity !== base.rarity).toBe(true);
+      expect(c.craftable).toBe(false);
+    }
+  });
+
+  it('au plus une carte reverse, uniquement sur Commune/Peu commune/Rare', () => {
+    const rng = seededRng(5);
+    let hits = 0;
+    for (let i = 0; i < 4000; i++) {
+      const r = openPack(cfg(), zero, rng);
+      const slot = rollReverse(r.cards, () => true, DEFAULT_REVERSE_CHANCE, rng);
+      if (slot != null) {
+        hits++;
+        expect(REVERSE_RARITIES).toContain(r.cards[slot]!.rarity);
+      }
+    }
+    expect(hits / 4000).toBeCloseTo(DEFAULT_REVERSE_CHANCE / 100_000, 1);
   });
 });

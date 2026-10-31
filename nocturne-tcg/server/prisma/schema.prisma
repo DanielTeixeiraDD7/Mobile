@@ -34,6 +34,7 @@ enum Faction {
 enum Variant {
   NORMAL
   HOLO
+  FULL_ART
   ALTERNATE
 }
 
@@ -124,30 +125,30 @@ enum BattleStatus {
 }
 
 model User {
-  id                  String    @id @default(cuid())
-  email               String    @unique
-  passwordHash        String?
-  displayName         String    @unique
-  birthDate           DateTime  @db.Date
-  country             String    @db.Char(2)
-  role                Role      @default(PLAYER)
-  emailVerifiedAt     DateTime?
-  parentalConsentAt   DateTime?
-  parentEmail         String?
+  id                   String    @id @default(cuid())
+  email                String    @unique
+  passwordHash         String?
+  displayName          String    @unique
+  birthDate            DateTime  @db.Date
+  country              String    @db.Char(2)
+  role                 Role      @default(PLAYER)
+  emailVerifiedAt      DateTime?
+  parentalConsentAt    DateTime?
+  parentEmail          String?
   monthlySpendCapCents Int?
-  tokenVersion        Int       @default(0)
-  freePacks           Int       @default(2)
-  freePacksUpdatedAt  DateTime  @default(now())
-  avatarId            String?
-  cardBackId          String?
-  frameId             String?
-  titleId             String?
-  stripeCustomerId    String?   @unique
-  blockedAt           DateTime?
-  blockedReason       String?
-  deletedAt           DateTime?
-  acceptedTermsAt     DateTime
-  createdAt           DateTime  @default(now())
+  tokenVersion         Int       @default(0)
+  freePacks            Int       @default(2)
+  freePacksUpdatedAt   DateTime  @default(now())
+  avatarId             String?
+  cardBackId           String?
+  frameId              String?
+  titleId              String?
+  stripeCustomerId     String?   @unique
+  blockedAt            DateTime?
+  blockedReason        String?
+  deletedAt            DateTime?
+  acceptedTermsAt      DateTime
+  createdAt            DateTime  @default(now())
 
   tokens       EmailToken[]
   cards        UserCard[]
@@ -161,8 +162,8 @@ model User {
   subscription Subscription?
   decks        Deck[]
   battles      Battle[]
-  proposed     Trade[]       @relation("proposer")
-  received     Trade[]       @relation("receiver")
+  proposed     Trade[]           @relation("proposer")
+  received     Trade[]           @relation("receiver")
   audit        AuditLog[]
 }
 
@@ -189,8 +190,8 @@ model CardSet {
 }
 
 model Card {
-  id           String   @id @default(cuid())
-  code         String   @unique
+  id           String  @id @default(cuid())
+  code         String  @unique
   setId        String
   number       Int
   name         String
@@ -201,22 +202,23 @@ model Card {
   abilityKey   String
   abilityName  String
   abilityText  String
-  abilityValue Int      @default(0)
+  abilityValue Int     @default(0)
   lore         String
   imageUrl     String?
   silhouette   String
-  variant      Variant  @default(NORMAL)
+  variant      Variant @default(NORMAL)
   form         Form?
   pairCode     String?
-  craftable    Boolean  @default(true)
-  active       Boolean  @default(true)
-  set          CardSet  @relation(fields: [setId], references: [id])
+  baseCode     String?
+  craftable    Boolean @default(true)
+  active       Boolean @default(true)
+  set          CardSet @relation(fields: [setId], references: [id])
 
-  owners       UserCard[]
-  pullCards    PullCard[]
-  featuredIn   BannerFeature[]
-  tradeItems   TradeItem[]
-  deckCards    DeckCard[]
+  owners     UserCard[]
+  pullCards  PullCard[]
+  featuredIn BannerFeature[]
+  tradeItems TradeItem[]
+  deckCards  DeckCard[]
 
   @@unique([setId, number])
   @@index([rarity])
@@ -226,6 +228,8 @@ model UserCard {
   userId     String
   cardId     String
   quantity   Int      @default(0)
+  /// Parmi les exemplaires, ceux en finition reverse holo (≤ quantity).
+  reverseQty Int      @default(0)
   firstAt    DateTime @default(now())
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   card       Card     @relation(fields: [cardId], references: [id])
@@ -234,15 +238,17 @@ model UserCard {
 }
 
 model PackType {
-  id          String     @id @default(cuid())
-  code        String     @unique
-  name        String
-  setId       String
-  priceEmbers Int?
-  priceShards Int?
-  set         CardSet    @relation(fields: [setId], references: [id])
-  slots       PackSlot[]
-  banners     Banner[]
+  id            String     @id @default(cuid())
+  code          String     @unique
+  name          String
+  setId         String
+  priceEmbers   Int?
+  priceShards   Int?
+  /// Chance (sur 100 000) qu'un booster contienne une carte reverse holo.
+  reverseChance Int        @default(15000)
+  set           CardSet    @relation(fields: [setId], references: [id])
+  slots         PackSlot[]
+  banners       Banner[]
 }
 
 model PackSlot {
@@ -294,38 +300,39 @@ model BannerFeature {
 }
 
 model PityCounter {
-  userId          String
-  bannerId        String
-  sinceEpic       Int    @default(0)
-  sinceLegendary  Int    @default(0)
-  totalPacks      Int    @default(0)
-  user            User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  banner          Banner @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+  userId         String
+  bannerId       String
+  sinceEpic      Int    @default(0)
+  sinceLegendary Int    @default(0)
+  totalPacks     Int    @default(0)
+  user           User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  banner         Banner @relation(fields: [bannerId], references: [id], onDelete: Cascade)
 
   @@id([userId, bannerId])
 }
 
 model Pull {
-  id           String     @id @default(cuid())
-  userId       String
-  bannerId     String
-  source       PullSource
-  pity         String?
-  createdAt    DateTime   @default(now())
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  banner       Banner     @relation(fields: [bannerId], references: [id])
-  cards        PullCard[]
+  id        String     @id @default(cuid())
+  userId    String
+  bannerId  String
+  source    PullSource
+  pity      String?
+  createdAt DateTime   @default(now())
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  banner    Banner     @relation(fields: [bannerId], references: [id])
+  cards     PullCard[]
 
   @@index([userId, createdAt])
 }
 
 model PullCard {
-  pullId String
-  slot   Int
-  cardId String
-  isNew  Boolean
-  pull   Pull    @relation(fields: [pullId], references: [id], onDelete: Cascade)
-  card   Card    @relation(fields: [cardId], references: [id])
+  pullId  String
+  slot    Int
+  cardId  String
+  isNew   Boolean
+  reverse Boolean @default(false)
+  pull    Pull    @relation(fields: [pullId], references: [id], onDelete: Cascade)
+  card    Card    @relation(fields: [cardId], references: [id])
 
   @@id([pullId, slot])
 }
@@ -407,13 +414,13 @@ model TradeItem {
 }
 
 model Cosmetic {
-  id           String         @id @default(cuid())
-  code         String         @unique
-  name         String
-  kind         CosmeticKind
-  priceEmbers  Int?
-  passExclusive Boolean       @default(false)
-  owners       UserCosmetic[]
+  id            String         @id @default(cuid())
+  code          String         @unique
+  name          String
+  kind          CosmeticKind
+  priceEmbers   Int?
+  passExclusive Boolean        @default(false)
+  owners        UserCosmetic[]
 }
 
 model UserCosmetic {
@@ -455,14 +462,14 @@ model Purchase {
 }
 
 model Subscription {
-  id                   String    @id @default(cuid())
-  userId               String    @unique
-  stripeSubscriptionId String?   @unique
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  stripeSubscriptionId String?  @unique
   status               String
   currentPeriodEnd     DateTime
-  cancelAtPeriodEnd    Boolean   @default(false)
-  updatedAt            DateTime  @updatedAt
-  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cancelAtPeriodEnd    Boolean  @default(false)
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model StripeEvent {

@@ -72,4 +72,12 @@ npm test -w client   # 4 tests de l'API de démo
 | 3 | échanges à double confirmation, missions quotidiennes/hebdo, connexion quotidienne, cosmétiques, panel admin (stats, joueurs, cartes, taux, bannières, pays, transactions, audit) | ✅ |
 | 4 | combat au tour par tour, deck de 10 cartes, 10 capacités, IA, récompenses | ✅ |
 
+### Versions de cartes
+- **Classique** : cadre métal selon la rareté, illustration dans la fenêtre.
+- **Reverse holo** : finition tirée au hasard (15 % des boosters, configurable via `PackType.reverseChance`) sur une Commune, Peu commune ou Rare ; même carte, cadre holographique. Stockée dans `UserCard.reverseQty`, clé `<code>#R` côté client.
+- **Full Art** : carte à part (`variant = FULL_ART`, `baseCode` → classique), une rareté au-dessus, illustration bord à bord.
+- **Couronne** : édition légendaire (`variant = ALTERNATE`), Secrète, full art + cadre or.
+
+Illustrations : `docs/nocturne-prompts-illustrations.xlsx` (un prompt par carte), fichiers dans `client/public/cards/`, déclarés dans `ILLUSTRATIONS` (`shared/src/cards.ts`).
+
 À faire ensuite : intégration Stripe (mode test), vraies illustrations via `imageUrl` (champ éditable dans l'admin), relecture juridique des textes légaux.

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { RARITY_COLOR, RARITY_LABEL, rarityRank, type PullDTO } from '@nocturne/shared';
+import { RARITY_COLOR, RARITY_LABEL, VARIANT_LABEL, rarityRank, type PullDTO } from '@nocturne/shared';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useSession } from '@/stores/session';
 import CardBack from './CardBack.vue';
@@ -75,11 +75,11 @@ onUnmounted(() => window.removeEventListener('keydown', onKey));
       <div class="slot" :class="{ leaving }">
         <div class="flip" :class="{ on: flipped }">
           <div class="face back"><CardBack :back="s.me?.cardBack" :glow="hint" /></div>
-          <div class="face front"><CardView :card="cur.card" :is-new="cur.isNew" detail :frame="s.me?.frame" /></div>
+          <div class="face front"><CardView :card="cur.card" :is-new="cur.isNew" :reverse="cur.reverse" detail hq :frame="s.me?.frame" /></div>
         </div>
       </div>
       <div class="label" :style="{ color: RARITY_COLOR[cur.rarity], opacity: flipped ? 1 : 0 }">
-        {{ RARITY_LABEL[cur.rarity] }}<span v-if="pull.pity && index === cards.length - 1"> · Garantie de pitié</span>
+        {{ RARITY_LABEL[cur.rarity] }}<span v-if="cur.card.variant !== 'NORMAL'"> · {{ VARIANT_LABEL[cur.card.variant] }}</span><span v-if="cur.reverse"> · Reverse holo</span><span v-if="pull.pity && index === cards.length - 1"> · Garantie de pitié</span>
       </div>
       <p class="hint">{{ flipped ? 'Touche pour continuer' : 'Touche pour révéler' }}</p>
       <button class="btn ghost sm skip" @click.stop="skip">Tout révéler</button>
@@ -90,7 +90,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey));
       <p v-if="pull.pity" class="pity">Garantie de pitié déclenchée : {{ pull.pity === 'LEGENDARY' ? 'Légendaire' : 'Épique' }} ou mieux.</p>
       <div class="sum-grid">
         <RouterLink v-for="c in cards" :key="c.slot" :to="`/carte/${c.cardId}`" class="sum-card" @click="emit('close')">
-          <CardView :card="c.card" :is-new="c.isNew" />
+          <CardView :card="c.card" :is-new="c.isNew" :reverse="c.reverse" />
         </RouterLink>
       </div>
       <div class="row actions">

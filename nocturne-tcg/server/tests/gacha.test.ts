@@ -92,3 +92,22 @@ describe('ledger', () => {
     await expect(prisma.ledgerEntry.delete({ where: { id: e.id } })).rejects.toThrow(/immuable/);
   });
 });
+
+describe('reverse holo', () => {
+  it('donne au plus une carte reverse par booster, comptée dans la collection et préservée au recyclage', async () => {
+    await prisma.packType.update({ where: { code: 'NE1_STANDARD' }, data: { reverseChance: 100_000 } });
+    try {
+      const { agent } = await player();
+      const r = await agent.post(`/api/banners/${await bannerId()}/open`).send({ source: 'FREE' }).expect(200);
+      const rev = r.body.pull.cards.filter((c: { reverse: boolean }) => c.reverse);
+      expect(rev).toHaveLength(1);
+      expect(['COMMON', 'UNCOMMON', 'RARE']).toContain(rev[0].rarity);
+      const col = (await agent.get('/api/collection')).body;
+      expect(col[`${rev[0].cardId}#R`]).toBe(1);
+      const rates = (await agent.get(`/api/banners/${await bannerId()}/rates`)).body;
+      expect(rates.reversePercent).toBe(100);
+    } finally {
+      await prisma.packType.update({ where: { code: 'NE1_STANDARD' }, data: { reverseChance: 15_000 } });
+    }
+  });
+});

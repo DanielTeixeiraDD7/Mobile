@@ -45,6 +45,8 @@ const byRarity = computed(() => RARITIES.map(r => ({ r, cards: (rates.value?.car
       <section class="panel">
         <h3>Garantie de pitié</h3>
         <p>Si aucun des {{ rates.pity.epicEvery - 1 }} boosters précédents ne contenait d’Épique ou mieux, le {{ rates.pity.epicEvery }}<sup>e</sup> en contient au moins un. Si aucun des {{ rates.pity.legendaryAt - 1 }} boosters précédents ne contenait de Légendaire ou mieux, le {{ rates.pity.legendaryAt }}<sup>e</sup> en contient au moins un. La carte garantie remplace la 5<sup>e</sup> carte, selon les poids de cet emplacement limités aux raretés éligibles. Les compteurs sont propres à chaque bannière et se remettent à zéro dès qu’une carte éligible est obtenue.</p>
+        <p>Reverse holo : {{ pct(rates.reversePercent) }} des boosters contiennent une carte reverse holo (même carte, finition holographique). Elle remplace la finition d’une carte Commune, Peu commune ou Rare classique déjà tirée et ne change pas les taux ci-dessus.</p>
+        <p>Versions : les Full Art et les éditions Couronne sont des cartes à part entière, listées avec leur rareté et leur probabilité ci-dessous.</p>
         <p v-if="banner?.featuredShare">Bannière à taux augmenté : quand une rareté est tirée, {{ pct(banner.featuredShare / 1000) }} des tirages de cette rareté tombent sur les cartes mises en avant de cette rareté.</p>
       </section>
       <section class="panel">

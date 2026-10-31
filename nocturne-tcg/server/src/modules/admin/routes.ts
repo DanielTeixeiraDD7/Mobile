@@ -91,7 +91,7 @@ router.patch('/cards/:id', async (req, res) => {
 
 router.get('/packs', async (_req, res) => {
   const packs = await prisma.packType.findMany({ include: { slots: { include: { rates: true }, orderBy: { index: 'asc' } } } });
-  res.json(packs.map(p => ({ id: p.id, code: p.code, name: p.name, priceEmbers: p.priceEmbers, priceShards: p.priceShards, slots: p.slots.map(s => Object.fromEntries(s.rates.map(r => [r.rarity, r.weight]))) })));
+  res.json(packs.map(p => ({ id: p.id, code: p.code, name: p.name, priceEmbers: p.priceEmbers, priceShards: p.priceShards, reverseChance: p.reverseChance, slots: p.slots.map(s => Object.fromEntries(s.rates.map(r => [r.rarity, r.weight]))) })));
 });
 
 router.put('/packs/:code/rates', async (req, res) => {
@@ -109,7 +109,7 @@ router.put('/packs/:code/rates', async (req, res) => {
 });
 
 router.put('/packs/:code/prices', async (req, res) => {
-  const data = body(z.object({ priceEmbers: z.number().int().min(1).nullable(), priceShards: z.number().int().min(1).nullable() }), req.body);
+  const data = body(z.object({ priceEmbers: z.number().int().min(1).nullable(), priceShards: z.number().int().min(1).nullable(), reverseChance: z.number().int().min(0).max(100_000).optional() }), req.body);
   await prisma.packType.update({ where: { code: String(req.params.code) }, data });
   await audit(req, 'pack.prices', String(req.params.code), data);
   res.status(204).end();

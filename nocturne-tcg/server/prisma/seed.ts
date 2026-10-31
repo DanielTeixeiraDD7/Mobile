@@ -12,7 +12,7 @@ export async function seed(db = prisma, opts: { demoPlayers?: boolean } = {}) {
     const data = {
       setId: set.id, number: c.number, name: c.name, rarity: c.rarity, faction: c.faction, hp: c.hp, attack: c.attack,
       abilityKey: c.abilityKey, abilityName: c.abilityName, abilityText: abilityText(c.abilityKey, c.abilityValue), abilityValue: c.abilityValue,
-      lore: c.lore, imageUrl: c.imageUrl, silhouette: c.silhouette, variant: c.variant, form: c.form, pairCode: c.pairCode, craftable: c.craftable,
+      lore: c.lore, imageUrl: c.imageUrl, silhouette: c.silhouette, variant: c.variant, form: c.form, pairCode: c.pairCode, baseCode: c.baseCode, craftable: c.craftable,
     };
     await db.card.upsert({ where: { code: c.code }, create: { id: c.code, code: c.code, ...data }, update: data });
   }

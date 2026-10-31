@@ -3,7 +3,7 @@
  * même moteur partagé (tirage, pitié, combat), données en localStorage. Ne sert qu'à tester l'interface.
  */
 import {
-  ADULT_AGE, CRAFT_COST, DAILY_LOGIN_EMBERS, DEFAULT_COSMETICS, DEFAULT_MINOR_CAP_CENTS, DEFAULT_MISSIONS, DEFAULT_SHOP, DEFAULT_SLOTS,
+  ADULT_AGE, CRAFT_COST, DEFAULT_REVERSE_CHANCE, reverseKey, rollReverse, DAILY_LOGIN_EMBERS, DEFAULT_COSMETICS, DEFAULT_MINOR_CAP_CENTS, DEFAULT_MISSIONS, DEFAULT_SHOP, DEFAULT_SLOTS,
   FREE_PACKS_PER_DAY, MIN_AGE, PACK_PRICE_EMBERS, PACK_PRICE_SHARDS, PASS_FREE_PACKS_PER_DAY, RARITIES, SET1, SET1_CARDS, STREAK_BONUS_EMBERS,
   STREAK_BONUS_EVERY, WELCOME_EMBERS, abilityText, ageOn, buildEnemyDeck, consumeFreePack, createBattle, dayKey, dustFor, freePackState,
   openPack, periodKey, playerStep, rateTable, validateDeck,
@@ -160,6 +160,9 @@ function addCard(userId: string, cardId: string, n = 1) {
   const c = (db.cards[userId] ??= {});
   c[cardId] = (c[cardId] ?? 0) + n;
   if (c[cardId]! <= 0) delete c[cardId];
+  const rk = reverseKey(cardId);
+  if (!cardId.endsWith('#R') && (c[rk] ?? 0) > (c[cardId] ?? 0)) c[rk] = c[cardId] ?? 0;
+  if (c[rk] === 0) delete c[rk];
 }
 
 function compliance(u: DUser): ComplianceDTO {
@@ -257,7 +260,7 @@ function botsAct(u: DUser) {
     }
   }
   const mine = db.cards[u.id] ?? {};
-  const dup = Object.entries(mine).find(([, q]) => q > 1)?.[0];
+  const dup = Object.entries(mine).find(([id, q]) => q > 1 && cardById(id))?.[0];
   if (dup && !db.trades.some(t => t.receiverId === u.id && db.users.find(b => b.id === t.proposerId)?.bot)) {
     const rarity = cardById(dup)?.rarity;
     const bot = db.users.find(b => b.bot)!;
@@ -389,7 +392,7 @@ export const demoApi: Api = {
   rates: op(id => {
     const b = db.banners.find(x => x.id === id);
     if (!b) throw err(404, 'Bannière introuvable');
-    return { bannerId: id, ...rateTable(bannerConfig(b)) };
+    return { bannerId: id, reversePercent: DEFAULT_REVERSE_CHANCE / 1000, ...rateTable(bannerConfig(b)) };
   }),
   open: op((bannerId, source) => {
     const u = current();
@@ -412,13 +415,17 @@ export const demoApi: Api = {
     const pity = db.pity[key] ?? { sinceEpic: 0, sinceLegendary: 0, totalPacks: 0 };
     const r = openPack(bannerConfig(b), pity, cryptoRng);
     db.pity[key] = { ...r.pity, totalPacks: pity.totalPacks + 1 };
+    const reverseSlot = rollReverse(r.cards, c => cardById(c.cardId)?.variant === 'NORMAL', DEFAULT_REVERSE_CHANCE, cryptoRng);
     const seen = new Set<string>();
     const cards = r.cards.map(c => {
       const isNew = !(db.cards[u.id]?.[c.cardId]) && !seen.has(c.cardId);
       seen.add(c.cardId);
-      return { slot: c.slot, cardId: c.cardId, rarity: c.rarity, isNew };
+      return { slot: c.slot, cardId: c.cardId, rarity: c.rarity, isNew, reverse: c.slot === reverseSlot };
     });
-    cards.forEach(c => addCard(u.id, c.cardId));
+    cards.forEach(c => {
+      addCard(u.id, c.cardId);
+      if (c.reverse) addCard(u.id, reverseKey(c.cardId));
+    });
     const pull: DPull = { id: uid(), userId: u.id, bannerId: b.id, source, pity: r.pityTriggered, createdAt: nowIso(), cards };
     db.pulls.unshift(pull);
     track(u.id, 'OPEN_PACKS');
@@ -451,13 +458,15 @@ export const demoApi: Api = {
   recycle: op(cardId => {
     const u = current();
     let dust = 0, count = 0;
-    for (const [id, q] of Object.entries(db.cards[u.id] ?? {})) {
-      if (q <= 1 || (cardId && id !== cardId)) continue;
+    const mine = db.cards[u.id] ?? {};
+    for (const [id, q] of Object.entries(mine)) {
       const c = cardById(id);
-      if (!c) continue;
-      dust += (q - 1) * dustFor(c.rarity, passActive(u));
-      count += q - 1;
-      db.cards[u.id]![id] = 1;
+      if (!c || (cardId && id !== cardId)) continue;
+      const kept = Math.max(1, mine[reverseKey(id)] ?? 0);
+      if (q <= kept) continue;
+      dust += (q - kept) * dustFor(c.rarity, passActive(u));
+      count += q - kept;
+      mine[id] = kept;
     }
     if (!count) throw err(400, 'Aucun doublon à recycler');
     post(u.id, [{ currency: 'DUST', amount: dust, reason: 'DUPLICATE_RECYCLE', note: `${count} doublon(s)` }]);

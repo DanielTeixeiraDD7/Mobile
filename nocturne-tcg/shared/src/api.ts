@@ -52,11 +52,11 @@ export interface BannerDTO {
   paidPacksAllowed: boolean;
 }
 
-export type RatesDTO = RateTable & { bannerId: string };
+export type RatesDTO = RateTable & { bannerId: string; reversePercent: number };
 
 export type PullSource = 'FREE' | 'EMBERS' | 'SHARDS';
 
-export interface PullCardDTO { slot: number; cardId: string; rarity: Rarity; isNew: boolean }
+export interface PullCardDTO { slot: number; cardId: string; rarity: Rarity; isNew: boolean; reverse: boolean }
 
 export interface PullDTO { id: string; bannerId: string; bannerName: string; source: PullSource; pity: string | null; createdAt: string; cards: PullCardDTO[] }
 

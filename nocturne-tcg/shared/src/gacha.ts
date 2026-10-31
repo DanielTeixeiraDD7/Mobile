@@ -30,6 +30,17 @@ export interface PackResult { cards: DrawnCard[]; pity: PityState; pityTriggered
 /** Poids de secours quand un slot ne contient aucune rareté éligible à la pitié. */
 const PITY_FALLBACK: SlotRates = { EPIC: 80_000, LEGENDARY: 16_000, SECRET: 4_000 };
 
+/** Chance (sur 100 000) qu'un booster contienne une carte reverse holo. */
+export const DEFAULT_REVERSE_CHANCE = 15_000;
+export const REVERSE_RARITIES: Rarity[] = ['COMMON', 'UNCOMMON', 'RARE'];
+
+/** Au plus une carte reverse par booster, parmi les cartes classiques éligibles. Renvoie son slot. */
+export function rollReverse(cards: DrawnCard[], eligible: (c: DrawnCard) => boolean, chance: number, rng: Rng): number | null {
+  if (rng.int(WEIGHT_TOTAL) >= chance) return null;
+  const pool = cards.filter(c => REVERSE_RARITIES.includes(c.rarity) && eligible(c));
+  return pool.length ? pool[rng.int(pool.length)]!.slot : null;
+}
+
 export const DEFAULT_SLOTS: SlotRates[] = [
   { COMMON: 74_000, UNCOMMON: 24_000, RARE: 2_000 },
   { COMMON: 74_000, UNCOMMON: 24_000, RARE: 2_000 },
