@@ -200,5 +200,5 @@ const rays = computed(() => {
 .art-full { position: relative; width: 100%; height: 100%; overflow: hidden; background: #000; }
 .art-full img { position: absolute; left: 0; width: 100%; object-fit: cover; }
 .art-full .bg { top: 0; height: 100%; object-position: 50% 0; filter: blur(10px) brightness(.55); transform: scale(1.15); }
-.art-full .fg { top: 11%; height: 89%; object-position: 50% 0; -webkit-mask-image: linear-gradient(180deg, transparent, #000 6%); mask-image: linear-gradient(180deg, transparent, #000 6%); }
+.art-full .fg { top: 5%; height: 95%; object-position: 50% 0; -webkit-mask-image: linear-gradient(180deg, transparent, #000 6%); mask-image: linear-gradient(180deg, transparent, #000 6%); }
 </style>
