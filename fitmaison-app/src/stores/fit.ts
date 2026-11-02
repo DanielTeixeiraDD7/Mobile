@@ -1,10 +1,12 @@
 import { defineStore } from 'pinia';
-import { CLE, charger, enregistrer, etatVide, lireSauvegarde, type Etat, type Jour, type Profil, type Reglages, type SeanceFaite } from '@/core/etat';
+import { CLE, charger, enregistrer, etatVide, lireSauvegarde, type BilanPlan, type Etat, type Jour, type PhaseId, type PlanEtat, type Profil, type Reglages, type SeanceFaite } from '@/core/etat';
 import { aujourdhui } from '@/core/dates';
 import { PALIERS, SEANCES, type Niveau } from '@/core/programmes';
 import { creerPodometre } from '@/core/podometre';
 import * as calc from '@/core/calculs';
 import { toast } from '@/composables/useToast';
+import { lancerSeance, useSeanceEnCours } from '@/composables/useSeance';
+import { nouveauPlan, reprendre } from '@/core/plan';
 
 /** État de l'app (localStorage « fitmaison_v1 », compatible v1) et actions. */
 export const useFit = defineStore('fit', () => {
@@ -55,6 +57,14 @@ export const useFit = defineStore('fit', () => {
   function supprimerPesee(d: string) { etat.value.weights = etat.value.weights.filter(w => w.date !== d); }
 
   function eau(verres: number) { const j = jour(); j.water = j.water === verres ? verres - 1 : verres; }
+  /** Pauses actives du jour (même logique que l'eau : retoucher la même valeur l'enlève). */
+  function pause(n: number) {
+    const j = jour(); const avant = j.pauses ?? 0;
+    j.pauses = Math.max(0, j.pauses === n ? n - 1 : n);
+    if (j.pauses > avant) dernierePause = Date.now();
+  }
+  /** Douleur genoux / dos du jour (0–10), pour la règle de la douleur du plan. */
+  function douleur(n: number) { jour().douleur = Math.max(0, Math.min(10, Math.round(n))); }
   function pas(n: number) { jour().steps = Math.max(0, Math.min(100_000, Math.round(n))); }
   function habitude(id: string, v: boolean) { jour().habits[id] = v; }
   function ajouterRepas(label: string, kcal: number) { jour().food.push({ label: label.trim() || 'Repas', kcal: Math.round(kcal) }); }
@@ -63,6 +73,7 @@ export const useFit = defineStore('fit', () => {
 
   function enregistrerSeance(s: SeanceFaite) {
     etat.value.sessions.push(s);
+    if (s.type === 'bureau') { const j = jour(s.date); j.pauses = (j.pauses ?? 0) + 1; dernierePause = Date.now(); }
     const vus = new Set(etat.value.vus ?? []);
     s.exos?.forEach(x => vus.add(x));
     etat.value.vus = [...vus];
@@ -92,6 +103,60 @@ export const useFit = defineStore('fit', () => {
     etat.value.favoris = [...f];
   }
 
+  // ----- Plan « Objectif Foot » -----
+  const plan = computed(() => etat.value.plan);
+  function demarrerPlan(debut = aujourdhui(), pasDepart?: number) { etat.value.plan = nouveauPlan(etat.value, debut, pasDepart); }
+  function majPlan(p: Partial<PlanEtat>) { if (etat.value.plan) etat.value.plan = { ...etat.value.plan, ...p }; }
+  function arreterPlan() { delete etat.value.plan; }
+  /** Bilan du jour (remplace un bilan existant à la même date) ; met aussi la pesée à jour. */
+  function ajouterBilan(b: BilanPlan) {
+    const p = etat.value.plan;
+    if (!p) return;
+    p.bilans = [...p.bilans.filter(x => x.date !== b.date), b].sort((a, c) => a.date.localeCompare(c.date));
+    if (b.poids && b.poids >= 30 && b.poids <= 350) ajouterPesee(b.poids, b.date);
+  }
+  function supprimerBilan(d: string) { const p = etat.value.plan; if (p) p.bilans = p.bilans.filter(x => x.date !== d); }
+  function reprendrePlan(semaines: number) { if (etat.value.plan) etat.value.plan = reprendre(etat.value.plan, date.value, semaines); }
+  function forcerPhase(phase: PhaseId | null) { majPlan({ phaseForcee: phase ? { phase, depuis: date.value } : undefined }); }
+  function repondreSante(oui: string[], avisMedical?: boolean) { majPlan({ sante: { date: aujourdhui(), oui, avisMedical } }); }
+
+  // Rappel de pause active : seulement quand l'app est ouverte (aucun serveur, aucune donnée envoyée).
+  let dernierePause = Date.now();
+  const seanceEnCours = useSeanceEnCours();
+  function verifierRappel(maintenant = new Date()) {
+    const r = etat.value.plan?.rappel;
+    if (!r?.actif || seanceEnCours.value) return;
+    const h = maintenant.getHours(), j = maintenant.getDay();
+    if (j === 0 || j === 6 || h < (r.debut ?? 9) || h >= (r.fin ?? 18)) { dernierePause = maintenant.getTime(); return; }
+    if (maintenant.getTime() - dernierePause < r.minutes * 60_000) return;
+    dernierePause = maintenant.getTime();
+    const texte = `Ça fait ${r.minutes} min : lève-toi, 4 min de pause active !`;
+    if (document.visibilityState === 'visible') {
+      toast(`⏰ ${texte}`, { action: 'Go', duree: 20_000, onAction: () => lancerSeance('bureau') });
+    } else if (r.notification && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      try {
+        const n = new Notification('FitMaison · pause active', { body: texte, tag: 'fitmaison-pause', icon: 'icons/icon-192.png' });
+        n.onclick = () => { window.focus(); lancerSeance('bureau'); n.close(); };
+      } catch { /* notifications indisponibles (iOS hors PWA…) */ }
+    }
+  }
+  setInterval(verifierRappel, 30_000);
+  /** Active / règle le rappel. Les notifications ne sont demandées que si l'utilisateur les active explicitement. */
+  async function reglerRappel(o: Partial<NonNullable<PlanEtat['rappel']>>): Promise<boolean> {
+    const p = etat.value.plan;
+    if (!p) return false;
+    const r = { actif: false, minutes: 60, debut: 9, fin: 18, ...(p.rappel ?? {}), ...o };
+    if (o.notification) {
+      try {
+        const ok = typeof Notification !== 'undefined' && (Notification.permission === 'granted' || (await Notification.requestPermission()) === 'granted');
+        if (!ok) { r.notification = false; toast('Notifications refusées ou indisponibles : le rappel s’affichera dans l’app.', { type: 'warn' }); }
+      } catch { r.notification = false; }
+    }
+    if (o.actif) dernierePause = Date.now();
+    p.rappel = r;
+    return !!r.notification;
+  }
+
   function importer(texte: string) { etat.value = lireSauvegarde(texte); sauverMaintenant(); }
   function exporterTexte() { return JSON.stringify(etat.value); }
   function toutEffacer() { podometre.arreter(); etat.value = etatVide(); sauverMaintenant(); }
@@ -110,7 +175,8 @@ export const useFit = defineStore('fit', () => {
 
   return {
     etat, date, profil, reglages, jour, jourLu, poids, nutrition, tendance, serie, bruleAujourdhui,
-    creerProfil, majProfil, niveau, ajouterPesee, supprimerPesee, eau, pas, habitude, ajouterRepas, retirerRepas, reglage,
+    plan, demarrerPlan, majPlan, arreterPlan, ajouterBilan, supprimerBilan, reprendrePlan, forcerPhase, repondreSante, reglerRappel, verifierRappel,
+    creerProfil, majProfil, niveau, ajouterPesee, supprimerPesee, eau, pause, douleur, pas, habitude, ajouterRepas, retirerRepas, reglage,
     enregistrerSeance, noter, remplacer, annulerRemplacement, favori, importer, exporterTexte, toutEffacer,
     podoActif, podoSession, demarrerPodometre, arreterPodometre, sauverMaintenant,
   };

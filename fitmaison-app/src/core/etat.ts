@@ -12,7 +12,13 @@ export interface Profil {
 }
 export interface Pesee { date: string; kg: number }
 export interface SeanceFaite { date: string; type: TypeSeance; level: Niveau; duration: number; kcal: number; feel: 0 | 1 | 2 | 3; steps?: number; exos?: string[] }
-export interface Jour { water: number; steps: number; habits: Record<string, boolean>; food: { label: string; kcal: number }[] }
+export interface Jour {
+  water: number; steps: number; habits: Record<string, boolean>; food: { label: string; kcal: number }[];
+  /** v3 : pauses actives au bureau faites ce jour (séance « bureau » terminée ou pause notée à la main). */
+  pauses?: number;
+  /** v3 : douleur genoux / dos ressentie ce jour (0 à 10), règle de la douleur du plan. */
+  douleur?: number;
+}
 export interface Reglages {
   voice: boolean; sound: boolean; vibrate: boolean;
   /** v2 : démonstration des exercices jamais faits avant de les commencer. */
@@ -33,6 +39,44 @@ export interface Etat {
   remplacements?: Record<string, string>;
   /** v2 : exercices favoris. */
   favoris?: string[];
+  /** v3 : plan « Objectif Foot » (facultatif). */
+  plan?: PlanEtat;
+}
+
+export type PhaseId = 'reveil' | 'fondations' | 'moteur' | 'terrain';
+/** Bilan (test de passage) du plan. Tous les champs mesurés sont facultatifs : on note ce qu'on a pu faire. */
+export interface BilanPlan {
+  date: string;
+  /** Test de la parole pendant 6 min de marche rapide : 2 = phrases complètes, 1 = phrases courtes, 0 = quelques mots. */
+  parole?: 0 | 1 | 2;
+  /** Distance parcourue en 6 min de marche (m). */
+  marche6?: number;
+  /** Assis-debout depuis une chaise en 30 s (répétitions). */
+  assisDebout?: number;
+  /** Tenue de gainage (planche sur les genoux ou chaise contre le mur), en secondes. */
+  gainage?: number;
+  /** Essoufflement après un étage d'escalier, 0 (aucun) à 10 (maximal). */
+  escaliers?: number;
+  poids?: number;
+  /** Tour de taille (cm). */
+  tour?: number;
+  /** Douleur genoux / dos la plus forte pendant ou après le bilan (0 à 10). */
+  douleur?: number;
+}
+export interface PlanEtat {
+  /** Date de début (lundi de la première semaine ou jour de démarrage). */
+  debut: string;
+  /** Phase choisie à la main à partir d'une date (sinon : calculée par les bilans). */
+  phaseForcee?: { phase: PhaseId; depuis: string };
+  bilans: BilanPlan[];
+  /** Pauses du plan (« reprendre ») : à partir du lundi `date`, le plan recule de `semaines`. */
+  reprises?: { date: string; semaines: number }[];
+  /** Pas par jour au départ (mesurés ou estimés). */
+  pasDepart?: number;
+  /** Questionnaire santé (type PAR-Q+). */
+  sante?: { date: string; oui: string[]; avisMedical?: boolean };
+  /** Rappel de pause active quand l'app est ouverte. */
+  rappel?: { actif: boolean; minutes: number; notification?: boolean; debut?: number; fin?: number };
 }
 
 export const etatVide = (): Etat => ({
@@ -57,6 +101,9 @@ export function normaliser(d: Partial<Etat>): Etat {
     sessions: Array.isArray(d.sessions) ? d.sessions : [],
     days: d.days && typeof d.days === 'object' ? d.days : {},
     settings: { ...v.settings, ...(d.settings ?? {}) },
+    ...(d.plan && typeof d.plan === 'object' && typeof d.plan.debut === 'string'
+      ? { plan: { ...d.plan, bilans: Array.isArray(d.plan.bilans) ? d.plan.bilans : [] } }
+      : { plan: undefined }),
   };
 }
 

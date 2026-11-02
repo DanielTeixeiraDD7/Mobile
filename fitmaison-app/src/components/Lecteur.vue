@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { EXERCICES, ANIM_REPOS, MATERIEL } from '@/core/exercices';
 import { construire, type Etape } from '@/core/seance';
-import { SEANCES, type TypeSeance } from '@/core/programmes';
+import { SEANCES, TYPES_MARCHE, type TypeSeance } from '@/core/programmes';
 import { kcalSeance } from '@/core/calculs';
 import { aujourdhui, minutes } from '@/core/dates';
 import { bip, dire, taireVoix, vibrer } from '@/core/audio';
 import type { SeanceFaite } from '@/core/etat';
 import { useFit } from '@/stores/fit';
-import { ouvrirFiche } from '@/composables/useSeance';
+import { ouvrirFiche, useOptionsSeance } from '@/composables/useSeance';
 import { toast } from '@/composables/useToast';
+import { SOL, emprise, lireSilhouette, sceneConseillee } from '@/core/figurine';
 import Figurine from './Figurine.vue';
 import Icone from './Icone.vue';
 
@@ -18,7 +19,9 @@ const emit = defineEmits<{ fermer: [] }>();
 const fit = useFit();
 const r = fit.reglages;
 
-const etapes = ref<(Etape & { passe?: number })[]>(construire(props.type, fit.profil!.level, { vus: fit.etat.vus, demo: r.demo !== false, remplacements: fit.etat.remplacements }));
+// Niveau prescrit par le plan (sinon niveau du profil).
+const niveauSeance = useOptionsSeance().value.niveau ?? fit.profil!.level;
+const etapes = ref<(Etape & { passe?: number })[]>(construire(props.type, niveauSeance, { vus: fit.etat.vus, demo: r.demo !== false, remplacements: fit.etat.remplacements }));
 const i = ref(0);
 const reste = ref(etapes.value[0]!.dur);
 const enMarche = ref(false);
@@ -136,7 +139,7 @@ function terminer() {
   const kcal = kcalSeance(faites, fit.poids);
   const pas = Math.max(0, fit.jourLu().steps - pasDebut);
   const exos = [...new Set(etapes.value.filter(s => s.cle !== 'rest' && (s.passe ?? 0) > 5).map(s => s.cle))];
-  const s: SeanceFaite = { date: aujourdhui(), type: props.type, level: fit.profil!.level, duration: Math.round(ecoule.value), kcal, feel: 0, steps: pas, exos };
+  const s: SeanceFaite = { date: aujourdhui(), type: props.type, level: niveauSeance, duration: Math.round(ecoule.value), kcal, feel: 0, steps: pas, exos };
   fit.enregistrerSeance(s);
   fini.value = s;
   parler('Séance terminée. Bravo !');
@@ -167,7 +170,7 @@ onMounted(async () => {
   if (r.sound) bip(660, 1); // débloque l'audio sur iPhone (geste de l'utilisateur)
   verrouiller();
   document.addEventListener('visibilitychange', surVisibilite);
-  if (props.type === 'marche' && !fit.podoActif) podoAuto = await fit.demarrerPodometre();
+  if (TYPES_MARCHE.includes(props.type) && !fit.podoActif) podoAuto = await fit.demarrerPodometre();
   annoncer();
   reprendre();
 });
@@ -178,12 +181,18 @@ onBeforeUnmount(() => {
 });
 watch(voix, v => { if (!v) taireVoix(); fit.reglage('voice', v); });
 
-// Le personnage s'adapte à la hauteur de l'écran pour que tout tienne sans défiler.
-const hauteur = ref(window.innerHeight);
-const surResize = () => { hauteur.value = window.innerHeight; };
-window.addEventListener('resize', surResize);
-onBeforeUnmount(() => window.removeEventListener('resize', surResize));
-const tailleFigurine = computed(() => Math.round(Math.min(250, Math.max(140, hauteur.value - 650))));
+// Le coach occupe toute la place disponible : caméra cadrée sur lui (et son décor), arrière-plan adapté.
+const animCoach = computed(() => montre.value?.anim ?? ANIM_REPOS);
+const sceneCoach = computed(() => sceneConseillee(animCoach.value, montre.value?.cat ?? ''));
+const cadreCoach = computed((): [number, number, number, number] => {
+  const [x, y, w] = emprise(animCoach.value, true);
+  const m = 14, haut = Math.max(-20, y - m);
+  return [x - m, haut, w + 2 * m, SOL + 8 - haut];
+});
+const silhouette = lireSilhouette();
+const lent = ref(false);
+const NOMS_ZONES: Record<string, string> = { tronc: 'Gainage', cuisse: 'Cuisses', tibia: 'Mollets', bras: 'Bras', avbras: 'Bras' };
+const zonesCoach = computed(() => [...new Set((animCoach.value.zones ?? []).map(z => NOMS_ZONES[z.replace(/[GD]$/, '')] ?? z))].join(' · '));
 const anneau = computed(() => 100 - (Math.max(0, reste.value) / etape.value.dur) * 100);
 </script>
 
@@ -217,17 +226,26 @@ const anneau = computed(() => 100 - (Math.max(0, reste.value) / etape.value.dur)
       <p class="compteur tiny dim">{{ i + 1 }}/{{ etapes.length }} · {{ SEANCES[type].nom }}</p>
 
       <div class="corps">
-        <p v-if="etape.phase === 'demo'" class="bandeau">Nouveau pour toi : regarde la démonstration</p>
-        <p v-else-if="etape.phase === 'rest' && montre" class="bandeau repos">Ensuite : {{ montre.nom }}</p>
-        <div class="scene">
-          <Figurine :anim="montre?.anim ?? ANIM_REPOS" :taille="tailleFigurine" :joue="enMarche || etape.phase === 'rest'" />
+        <div class="scene" :class="{ repos: etape.phase === 'rest' }">
+          <Figurine
+            :anim="animCoach" remplir :scene="sceneCoach" :cadre="cadreCoach" :silhouette="silhouette"
+            :joue="enMarche || etape.phase === 'rest'" :vitesse="lent ? 0.5 : 1"
+          />
+          <p v-if="etape.phase === 'demo'" class="bandeau">Nouveau pour toi : regarde la démonstration</p>
+          <p v-else-if="etape.phase === 'rest' && montre" class="bandeau repos">Ensuite : {{ montre.nom }}</p>
+          <span v-if="zonesCoach && etape.phase !== 'rest'" class="zone-chip"><i aria-hidden="true" />{{ zonesCoach }}</span>
+          <button type="button" class="lent-chip" :aria-pressed="lent" @click="lent = !lent">🐢 Ralenti</button>
         </div>
-        <h1 class="nom">{{ etape.nom }}</h1>
-        <div class="minuteur">
-          <svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="54" class="piste" /><circle cx="60" cy="60" r="54" class="prog" pathLength="100" stroke-dasharray="100" :stroke-dashoffset="anneau" /></svg>
-          <b class="num">{{ Math.max(0, Math.ceil(reste)) }}</b>
+        <div class="infos-ex">
+          <div class="minuteur">
+            <svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="54" class="piste" /><circle cx="60" cy="60" r="54" class="prog" pathLength="100" stroke-dasharray="100" :stroke-dashoffset="anneau" /></svg>
+            <b class="num">{{ Math.max(0, Math.ceil(reste)) }}</b>
+          </div>
+          <div class="txt">
+            <h1 class="nom display">{{ etape.nom }}</h1>
+            <transition name="fade" mode="out-in"><p :key="consigne" class="consigne">{{ consigne }}</p></transition>
+          </div>
         </div>
-        <transition name="fade" mode="out-in"><p :key="consigne" class="consigne">{{ consigne }}</p></transition>
         <div v-if="materielAPreparer.length" class="prepa">
           <span v-for="m in materielAPreparer" :key="m.nom">{{ m.icone }} {{ m.nom }}</span>
         </div>
@@ -271,24 +289,34 @@ const anneau = computed(() => 100 - (Math.max(0, reste.value) / etape.value.dur)
 .barre { height: 5px; border-radius: 3px; background: var(--surface-3); overflow: hidden; margin-top: 10px; }
 .barre i { display: block; height: 100%; background: var(--c); transition: width .3s linear; }
 .compteur { margin: 6px 0 0; text-align: center; }
-.corps { flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; max-width: 520px; width: 100%; margin: 0 auto; }
-.bandeau { margin: 8px 0 0; padding: 5px 12px; border-radius: 99px; background: color-mix(in srgb, var(--c) 18%, transparent); color: var(--c); font-weight: 800; font-size: 13px; }
-.scene { margin-top: 2px; }
-.nom { margin: 0; font-size: 26px; letter-spacing: -.03em; line-height: 1.15; }
-.minuteur { position: relative; width: 86px; height: 86px; margin: 2px 0; }
+.corps { flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; max-width: 760px; width: 100%; margin: 8px auto 0; min-height: 0; }
+/* Scène du coach : prend toute la hauteur libre, comme une vidéo. */
+.scene { position: relative; flex: 1 1 0; min-height: 210px; max-height: 62vh; width: 100%; border-radius: var(--r-lg, 26px); overflow: hidden; background: var(--surface-2); border: 1px solid var(--border); box-shadow: var(--shadow); isolation: isolate; }
+.scene :deep(.figurine) { position: absolute; inset: 0; }
+.scene::after { content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--c) 55%, transparent); }
+.bandeau { position: absolute; top: 10px; left: 50%; translate: -50% 0; margin: 0; padding: 6px 12px; border-radius: 99px; white-space: nowrap; max-width: calc(100% - 20px); overflow: hidden; text-overflow: ellipsis; background: var(--c); color: var(--on-brand); font-weight: 800; font-size: 13px; box-shadow: 0 6px 18px -8px rgba(0, 0, 0, .5); }
+.zone-chip, .lent-chip { position: absolute; bottom: 10px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 99px; font-size: 12.5px; font-weight: 800; color: #fff; background: rgba(8, 12, 10, .6); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); border: 0; }
+.zone-chip { left: 10px; }
+.zone-chip i { width: 9px; height: 9px; border-radius: 50%; background: var(--flamme-vif, #f97316); box-shadow: 0 0 0 3px color-mix(in srgb, var(--flamme-vif, #f97316) 35%, transparent); }
+.lent-chip { right: 10px; cursor: pointer; }
+.lent-chip[aria-pressed='true'] { background: var(--volt, #c5f23b); color: var(--on-volt, #0a1405); }
+.infos-ex { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; }
+.txt { flex: 1; min-width: 0; display: grid; gap: 4px; }
+.nom { margin: 0; font-size: var(--fs-2xl, 28px); line-height: 1; }
+.minuteur { position: relative; flex: none; width: 88px; height: 88px; }
 .minuteur svg { width: 100%; height: 100%; transform: rotate(-90deg); }
 .minuteur circle { fill: none; stroke-width: 9; }
 .piste { stroke: var(--surface-3); }
 .prog { stroke: var(--c); stroke-linecap: round; transition: stroke-dashoffset .25s linear; }
 .minuteur b { position: absolute; inset: 0; display: grid; place-items: center; font-size: 30px; font-weight: 850; }
-.consigne { margin: 0; min-height: 44px; font-size: 15.5px; line-height: 1.4; color: var(--text); max-width: 34ch; }
+.consigne { margin: 0; min-height: 42px; font-size: 15px; line-height: 1.38; color: var(--muted); }
 .prepa { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
 .prepa span { padding: 4px 10px; border-radius: 99px; background: var(--surface-2); font-size: 13px; font-weight: 700; }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
 .ensuite { text-align: center; color: var(--muted); margin: 10px 0 8px; min-height: 20px; }
 .commandes { display: flex; align-items: center; justify-content: center; gap: 26px; }
 .icon-btn.grand { width: 54px; height: 54px; border-radius: 18px; }
-.lecture { width: 76px; height: 76px; border-radius: 26px; border: 0; display: grid; place-items: center; color: #fff; background: var(--c); box-shadow: 0 14px 30px -12px var(--c); transition: transform .12s; }
+.lecture { width: 76px; height: 76px; border-radius: 26px; border: 0; display: grid; place-items: center; color: var(--on-brand); background: var(--c); box-shadow: 0 14px 30px -12px var(--c); transition: transform .12s; }
 .lecture:active { transform: scale(.94); }
 .fin { margin: auto; max-width: 420px; width: 100%; display: grid; gap: 14px; text-align: center; }
 .fin h1 { margin: 0; font-size: 30px; }

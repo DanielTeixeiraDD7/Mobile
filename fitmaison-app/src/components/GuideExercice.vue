@@ -1,41 +1,18 @@
 <script setup lang="ts">
 import { EXERCICES, MATERIEL, type Exercice } from '@/core/exercices';
-import { dire, taireVoix } from '@/core/audio';
-import Figurine from './Figurine.vue';
+import CoachVideo from './CoachVideo.vue';
 import Icone from './Icone.vue';
 
-/** Tout pour comprendre un exercice : démonstration animée, consignes, points clés, erreurs, sensations. */
+/** Tout pour comprendre un exercice : vidéo du coach (ralenti, voix, sous-titres), consignes, points clés, erreurs, sensations. */
 const props = withDefaults(defineProps<{ ex: Exercice; compact?: boolean }>(), { compact: false });
 const emit = defineEmits<{ ouvrir: [id: string] }>();
 
-const lent = ref(false);
-const joue = ref(true);
-const lecture = ref(false);
 const facile = computed(() => (props.ex.versionFacile ? EXERCICES[props.ex.versionFacile] : undefined));
-
-function ecouter() {
-  if (lecture.value) { taireVoix(); lecture.value = false; return; }
-  const e = props.ex;
-  const texte = [e.nom + '.', 'Position de départ : ' + e.depart, ...e.etapes.map((x, i) => `${i + 1}. ${x}`), 'Respiration : ' + e.respiration, 'Attention : ' + e.cles[0]].join(' ');
-  dire(texte);
-  lecture.value = true;
-  // La fin de lecture n'est pas signalée partout : on remet le bouton après une durée estimée.
-  setTimeout(() => (lecture.value = false), Math.min(90_000, texte.length * 70));
-}
-onBeforeUnmount(() => { if (lecture.value) taireVoix(); });
 </script>
 
 <template>
   <article class="guide">
-    <div class="scene">
-      <Figurine :anim="ex.anim" :taille="compact ? 200 : 260" :joue="joue" :vitesse="lent ? 0.45 : 1" />
-      <div class="ctrl">
-        <button type="button" class="chip" :aria-pressed="!joue" @click="joue = !joue"><Icone :nom="joue ? 'pause' : 'play'" :taille="15" /> {{ joue ? 'Pause' : 'Lecture' }}</button>
-        <button type="button" class="chip" :class="{ on: lent }" @click="lent = !lent">🐢 Ralenti</button>
-        <button type="button" class="chip" :class="{ on: lecture }" @click="ecouter"><Icone :nom="lecture ? 'muet' : 'volume'" :taille="15" /> {{ lecture ? 'Stop' : 'Écouter' }}</button>
-      </div>
-      <p class="legende tiny dim"><i class="pastille" /> En orange : là où tu dois sentir l’effort.</p>
-    </div>
+    <CoachVideo :ex="ex" class="video" />
 
     <div class="tags">
       <span class="tag">{{ ex.cat }}</span>
@@ -105,15 +82,11 @@ onBeforeUnmount(() => { if (lecture.value) taireVoix(); });
 </template>
 
 <style scoped>
-.scene { display: grid; justify-items: center; gap: 8px; padding: 10px 0 14px; border-radius: 22px; background: radial-gradient(90% 70% at 50% 30%, color-mix(in srgb, var(--brand) 10%, transparent), transparent 70%), var(--surface); border: 1px solid var(--border); }
-.ctrl { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
-.legende { display: flex; align-items: center; gap: 6px; margin: 0; }
-.pastille { width: 10px; height: 10px; border-radius: 3px; background: var(--zone); }
 .tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 4px; }
 .bloc { margin-top: 16px; }
 .bloc h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 16px; letter-spacing: -.01em; }
 .bloc p { margin: 0; color: var(--muted); line-height: 1.55; }
-.num { width: 24px; height: 24px; border-radius: 50%; display: inline-grid; place-items: center; background: var(--brand-grad); color: #fff; font-size: 13px; font-weight: 850; }
+.num { width: 24px; height: 24px; border-radius: 50%; display: inline-grid; place-items: center; background: var(--brand-grad); color: var(--on-volt); font-size: 13px; font-weight: 850; }
 .etapes { margin: 0; padding-left: 22px; display: grid; gap: 6px; color: var(--text); line-height: 1.5; }
 .etapes li::marker { color: var(--brand); font-weight: 800; }
 .tempo { display: flex; align-items: center; gap: 6px; margin-top: 8px !important; font-weight: 700; color: var(--brand) !important; font-size: 14px; }

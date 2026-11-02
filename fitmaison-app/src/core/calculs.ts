@@ -71,8 +71,11 @@ export function brule(e: Etat, date: string) {
   return { seances, marche, total: seances + marche };
 }
 
+/** Séances « principales » : une pause active bureau (4 min) n'est pas comptée comme une séance. */
+export const principales = (e: Etat) => e.sessions.filter(s => s.type !== 'bureau');
+
 export function serie(e: Etat, maintenant = new Date()): number {
-  const dates = new Set(e.sessions.map(s => s.date));
+  const dates = new Set(principales(e).map(s => s.date));
   const d = new Date(maintenant);
   if (!dates.has(iso(d))) d.setDate(d.getDate() - 1);
   let n = 0;
@@ -80,7 +83,7 @@ export function serie(e: Etat, maintenant = new Date()): number {
   return n;
 }
 
-export const seancesSemaine = (e: Etat, maintenant = new Date()) => { const l = lundi(maintenant); return e.sessions.filter(s => s.date >= l); };
+export const seancesSemaine = (e: Etat, maintenant = new Date()) => { const l = lundi(maintenant); return principales(e).filter(s => s.date >= l); };
 export function bruleSemaine(e: Etat, maintenant = new Date()): number {
   let total = 0;
   const d = lireDate(lundi(maintenant));
@@ -90,9 +93,9 @@ export function bruleSemaine(e: Etat, maintenant = new Date()): number {
 export const poidsMin = (e: Etat) => Math.min(e.profile?.startWeight ?? Infinity, ...e.weights.map(w => w.kg));
 
 export const BADGES: { id: string; icone: string; label: string; test: (e: Etat) => boolean }[] = [
-  { id: 'first', icone: '🎉', label: 'Première séance', test: e => e.sessions.length >= 1 },
-  { id: 's10', icone: '💪', label: '10 séances', test: e => e.sessions.length >= 10 },
-  { id: 's50', icone: '🦾', label: '50 séances', test: e => e.sessions.length >= 50 },
+  { id: 'first', icone: '🎉', label: 'Première séance', test: e => principales(e).length >= 1 },
+  { id: 's10', icone: '💪', label: '10 séances', test: e => principales(e).length >= 10 },
+  { id: 's50', icone: '🦾', label: '50 séances', test: e => principales(e).length >= 50 },
   { id: 'streak3', icone: '🔥', label: '3 jours de suite', test: e => serie(e) >= 3 },
   { id: 'week4', icone: '📅', label: '4 séances en 1 semaine', test: e => seancesSemaine(e).length >= 4 },
   { id: 'kg5', icone: '⚖️', label: '−5 kg', test: e => (e.profile?.startWeight ?? 0) - poidsMin(e) >= 5 },

@@ -93,6 +93,7 @@ const CHEMINS: Record<string, string> = {
   bouclier: 'M12 3l8 3v6c0 5-3.4 8-8 9-4.6-1-8-4-8-9V6z M9 12l2.2 2.2L15.5 10',
   medical: 'M9.5 4h5v5.5H20v5h-5.5V20h-5v-5.5H4v-5h5.5z',
   menu: 'M4 7h16M4 12h16M4 17h10',
+  drapeau: 'M5 21V4 M5 4h12l-2.5 4.5L17 13H5',
   chrono: 'M12 21a8 8 0 1 0 0-16 8 8 0 0 0 0 16z M12 9v4l2.5 1.5 M10 2.5h4 M18.5 6.5l1.5-1.5',
   pause2: 'M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18z M10 9v6M14 9v6',
   etirement: 'M13 4.5a1.5 1.5 0 1 0 0-.01z M5 9l5-1 3 2 4-1.5 M13 10l-1 5-4 5 M12 15l4 2 1.5 3.5',

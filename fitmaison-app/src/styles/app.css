@@ -345,7 +345,7 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 /* ===== Grilles ===== */
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 @media (min-width: 992px) {
-  .cols-desk { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+  .cols-desk { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; align-items: start; margin-top: 18px; }
   .cols-desk > .section:first-child, .cols-desk > * > .section:first-child { margin-top: 0; }
 }
 
@@ -378,3 +378,4 @@ body.noscroll { overflow: hidden; }
 details > summary { cursor: pointer; list-style: none; font-weight: 700; }
 details > summary::-webkit-details-marker { display: none; }
 hr.sep { border: 0; border-top: 1px solid var(--border); margin: 14px 0; }
+.section-head.section { margin-top: 28px; }

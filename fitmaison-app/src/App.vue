@@ -12,7 +12,7 @@ import { kg } from '@/core/dates';
 import { useFit } from '@/stores/fit';
 import { useTheme } from '@/composables/useTheme';
 import { useEcran } from '@/composables/useEcran';
-import { useFicheOuverte, useSeanceEnCours } from '@/composables/useSeance';
+import { lancerSeance, useFicheOuverte, useSeanceEnCours } from '@/composables/useSeance';
 
 const fit = useFit();
 const route = useRoute();
@@ -56,6 +56,8 @@ const exFiche = computed(() => (fiche.value ? EXERCICES[fiche.value] : undefined
 /** Feuille « Démarrer » (bouton central). */
 const demarrer = ref(false);
 function aller(to: string) { demarrer.value = false; router.push(to); }
+function pauseActive() { demarrer.value = false; lancerSeance('bureau'); }
+const rapides = computed(() => TYPES.filter(t => t !== 'bureau'));
 </script>
 
 <template>
@@ -114,18 +116,17 @@ function aller(to: string) { demarrer.value = false; router.push(to); }
         </span>
         <span class="rond"><Icone nom="play" :taille="22" /></span>
       </button>
-      <p class="label">Séance rapide</p>
+      <button type="button" class="card ligne-lien pause-a" @click="pauseActive"><span class="pastille-ic"><Icone nom="bureau" /></span><span class="grow"><b>Pause active · 4 min</b><small>Casser la position assise, tout de suite</small></span><span class="go-s"><Icone nom="play" :taille="16" /></span></button>
+      <p class="label">Choisir une séance</p>
       <div class="rapides">
-        <button v-for="t in TYPES" :key="t" type="button" class="card rapide" @click="aller(`/seance/${t}`)">
+        <button v-for="t in rapides" :key="t" type="button" class="card rapide" @click="aller(`/seance/${t}`)">
           <span class="emoji" aria-hidden="true">{{ SEANCES[t].icone }}</span>
           <b>{{ SEANCES[t].nom }}</b>
         </button>
       </div>
       <p class="label">Exercices expliqués</p>
       <div class="liens-ex">
-        <button type="button" class="card ligne-lien" @click="aller('/exercices?cat=Bureau')"><span class="pastille-ic"><Icone nom="bureau" /></span><span class="grow"><b>Pause bureau</b><small>Déraidir dos, hanches et nuque</small></span><Icone nom="droite" :taille="18" class="dim" /></button>
-        <button type="button" class="card ligne-lien" @click="aller('/exercices?cat=Football')"><span class="pastille-ic"><Icone nom="ballon" /></span><span class="grow"><b>Ballon</b><small>Toucher, conduite, passes contre le mur</small></span><Icone nom="droite" :taille="18" class="dim" /></button>
-        <button type="button" class="card ligne-lien" @click="aller('/exercices')"><span class="pastille-ic"><Icone nom="livre" /></span><span class="grow"><b>Tous les exercices</b><small>Démo animée, étapes, erreurs à éviter</small></span><Icone nom="droite" :taille="18" class="dim" /></button>
+        <button type="button" class="card ligne-lien" @click="aller('/exercices')"><span class="pastille-ic"><Icone nom="livre" /></span><span class="grow"><b>Bibliothèque d’exercices</b><small>Démo animée, étapes, erreurs à éviter</small></span><Icone nom="droite" :taille="18" class="dim" /></button>
       </div>
     </div>
   </Feuille>
@@ -202,7 +203,12 @@ function aller(to: string) { demarrer.value = false; router.push(to); }
 .rapide { display: grid; justify-items: center; gap: 4px; padding: 14px 6px 12px; text-align: center; border-radius: 18px; }
 .rapide .emoji { font-size: 26px; line-height: 1; }
 .rapide b { font-size: 12.5px; line-height: 1.2; font-weight: 800; }
+.rapides { grid-template-columns: repeat(3, 1fr); }
+@media (min-width: 600px) { .rapides { grid-template-columns: repeat(5, 1fr); } }
 .liens-ex { display: grid; gap: 8px; }
+.pause-a { width: 100%; text-align: left; border-radius: 18px; }
+.pause-a .pastille-ic { background: color-mix(in srgb, var(--pause) 16%, transparent); color: var(--pause); }
+.go-s { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--volt); color: var(--on-volt); padding-left: 2px; }
 .liens-ex .ligne-lien { width: 100%; text-align: left; border-radius: 18px; }
 
 @media (min-width: 992px) { .main { padding: 32px 40px 56px; } }

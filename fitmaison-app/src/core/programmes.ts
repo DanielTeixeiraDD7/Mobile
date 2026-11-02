@@ -1,5 +1,7 @@
 /** Programmes, niveaux, planning, habitudes, conseils (repris de FitMaison v1). */
-export type TypeSeance = 'full' | 'cardio' | 'renfo' | 'marche' | 'mobilite';
+export type TypeSeance = 'full' | 'cardio' | 'renfo' | 'marche' | 'mobilite'
+  // v3 (plan « Objectif Foot ») : séances construites dans seance.ts.
+  | 'bureau' | 'souffle' | 'foot' | 'intervalles' | 'marche_course' | 'prevention';
 export type Niveau = 1 | 2 | 3;
 
 export const NIVEAUX: Record<Niveau, { nom: string; work: number; rest: number; rounds: number; roundRest: number; walk: number }> = {
@@ -35,8 +37,31 @@ export const SEANCES: Record<TypeSeance, { nom: string; icone: string; desc: str
   },
   marche: { nom: 'Marche active', icone: '🌳', desc: 'Alternance marche normale / rapide. Dans le jardin ou dehors.' },
   mobilite: { nom: 'Mobilité & étirements', icone: '🧘', desc: '10 min pour récupérer et assouplir le corps.' },
+  // ----- v3 : plan « Objectif Foot » (aucun saut) -----
+  bureau: { nom: 'Pause active bureau', icone: '🪑', desc: '4 min pour casser la position assise : se lever, ouvrir la poitrine, détendre la nuque et les hanches.' },
+  souffle: { nom: 'Souffle & marche facile', icone: '🌬️', desc: 'Respiration ventrale puis marche à allure où tu peux parler en phrases complètes.' },
+  foot: {
+    nom: 'Technique balle', icone: '⚽', desc: 'Toucher de balle au jardin, sans course ni saut : conduite, passes contre un mur, contrôles.',
+    circuit: {
+      1: ['toucher_ballon', 'conduite_balle', 'passe_mur', 'controle_semelle', 'equilibre_unipodal'],
+      2: ['toucher_ballon', 'conduite_balle', 'slalom_plots', 'passe_mur', 'controle_semelle', 'frappe_lente'],
+      3: ['conduite_balle', 'slalom_plots', 'pas_chasses_plots', 'passe_mur', 'frappe_lente', 'controle_semelle', 'equilibre_unipodal'],
+    },
+  },
+  intervalles: { nom: 'Intervalles marche', icone: '⏱️', desc: 'Marche rapide / marche normale, puis montées de marche au niveau 3. Sans impact.' },
+  marche_course: { nom: 'Marche / trottinement', icone: '🏃', desc: 'Retour progressif à la course : petits trottinements entre des blocs de marche (inspiré de Couch to 5K).' },
+  prevention: {
+    nom: 'Prévention blessures', icone: '🛡️', desc: 'Inspiré du FIFA 11+ : gainage, équilibre, pont, appuis latéraux. Sans saut.',
+    circuit: {
+      1: ['planche_genoux', 'pont', 'equilibre_unipodal', 'squat_chaise', 'marche_laterale', 'mollets'],
+      2: ['planche_genoux', 'pont_marche', 'equilibre_unipodal', 'squat', 'pas_chasses_plots', 'mollets'],
+      3: ['planche', 'pont_marche', 'equilibre_unipodal', 'fente_arriere', 'pas_chasses_plots', 'mollets'],
+    },
+  },
 };
-export const TYPES: TypeSeance[] = ['full', 'cardio', 'renfo', 'marche', 'mobilite'];
+export const TYPES: TypeSeance[] = ['full', 'cardio', 'renfo', 'marche', 'mobilite', 'souffle', 'intervalles', 'foot', 'prevention', 'marche_course', 'bureau'];
+/** Séances surtout marchées : le podomètre se lance automatiquement. */
+export const TYPES_MARCHE: TypeSeance[] = ['marche', 'souffle', 'intervalles', 'marche_course'];
 
 export const ECHAUFFEMENT = ['marche', 'rotation_bras', 'rotation_bassin', 'marche_genoux'];
 export const RETOUR_CALME = ['etirement_quadri', 'etirement_ischios', 'etirement_pecs', 'respiration'];

@@ -42,11 +42,11 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', touche); document.
 </template>
 
 <style scoped>
-.voile { position: fixed; inset: 0; z-index: 80; background: rgba(5, 10, 8, .45); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); display: flex; align-items: flex-end; justify-content: center; }
-.panneau { width: 100%; max-width: 560px; max-height: 92dvh; display: flex; flex-direction: column; background: var(--surface); border-radius: 26px 26px 0 0; box-shadow: var(--shadow-lg); outline: none; transition: transform .3s var(--ease); }
+.voile { position: fixed; inset: 0; z-index: 80; background: rgba(3, 8, 5, .55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: flex; align-items: flex-end; justify-content: center; }
+.panneau { width: 100%; max-width: 560px; max-height: 92dvh; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-bottom: 0; border-radius: 28px 28px 0 0; box-shadow: var(--shadow-lg); outline: none; transition: transform .3s var(--ease); }
 .tete { padding: 8px 20px 2px; touch-action: none; cursor: grab; }
-.poignee { display: block; width: 42px; height: 5px; border-radius: 3px; background: var(--surface-3); margin: 0 auto 10px; }
-.tete h2 { margin: 2px 0 6px; font-size: 21px; letter-spacing: -.02em; }
+.poignee { display: block; width: 42px; height: 5px; border-radius: 3px; background: var(--border-2); margin: 0 auto 10px; }
+.tete h2 { margin: 2px 0 8px; font-size: 26px; font-weight: 900; font-stretch: 75%; text-transform: uppercase; letter-spacing: .005em; line-height: 1.05; }
 .corps { overflow-y: auto; padding: 4px 18px calc(16px + var(--safe-b)); overscroll-behavior: contain; }
 .feuille-enter-active, .feuille-leave-active { transition: opacity .25s ease; }
 .feuille-enter-active .panneau, .feuille-leave-active .panneau { transition: transform .32s var(--ease); }
@@ -54,7 +54,7 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', touche); document.
 .feuille-enter-from .panneau, .feuille-leave-to .panneau { transform: translateY(100%); }
 @media (min-width: 992px) {
   .voile { align-items: center; }
-  .panneau { border-radius: 26px; max-height: 86dvh; }
+  .panneau { border-radius: 28px; border-bottom: 1px solid var(--border); max-height: 86dvh; }
   .feuille-enter-from .panneau, .feuille-leave-to .panneau { transform: translateY(30px) scale(.97); }
 }
 </style>
