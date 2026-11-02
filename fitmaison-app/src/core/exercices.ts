@@ -485,10 +485,11 @@ export const EXERCICES: Record<string, Exercice> = Object.fromEntries([
     erreurs: ['Cambrer le bas du dos en haut', 'Pieds trop loin des fesses'],
     sensation: 'Les fessiers doivent chauffer. Si tu sens surtout le bas du dos, monte moins haut.',
     difficile: 'Sur un seul pied, l’autre jambe tendue.',
-    anim: { vue: 'profil', durees: [1.0, 0.9, 1.6], decor: [{ type: 'tapis', x: 100 }], ancre: { x: ['cheville', 140] }, poses: [
-      { buste: -90, cuisseG: 135, tibiaG: 25, cuisseD: 135, tibiaD: 25, brasG: 90, avbrasG: 90, brasD: 90, avbrasD: 90, tete: 0 },
-      { buste: -112, cuisseG: 118, tibiaG: 10, cuisseD: 118, tibiaD: 10, brasG: 92, avbrasG: 92, brasD: 92, avbrasD: 92 },
-      { buste: -112, cuisseG: 118, tibiaG: 10, cuisseD: 118, tibiaD: 10, brasG: 92, avbrasG: 92, brasD: 92, avbrasD: 92 },
+    anim: { vue: 'profil', durees: [1.0, 0.9, 1.6], decor: [{ type: 'tapis', x: 100 }], ancre: { x: ['cheville', 132] }, poses: [
+      // Épaules et tête au sol, pieds à plat ; en haut, tibias verticaux et ligne épaules-hanches-genoux.
+      { buste: -90, cuisseG: 138, tibiaG: 12, cuisseD: 138, tibiaD: 12, brasG: 90, avbrasG: 90, brasD: 90, avbrasD: 90, tete: 0 },
+      { buste: -110, tete: -20, cuisseG: 110, tibiaG: 0, cuisseD: 110, tibiaD: 0, brasG: 90, avbrasG: 90, brasD: 90, avbrasD: 90 },
+      { buste: -110, tete: -20, cuisseG: 110, tibiaG: 0, cuisseD: 110, tibiaD: 0, brasG: 90, avbrasG: 90, brasD: 90, avbrasD: 90 },
     ], zones: ['tronc', 'cuisseG', 'cuisseD'] },
   }),
   ex({
