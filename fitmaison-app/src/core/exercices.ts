@@ -1021,7 +1021,7 @@ export const EXERCICES: Record<string, Exercice> = Object.fromEntries([
     facile: 'Arrête le ballon sous la semelle avant chaque nouvelle touche.', versionFacile: 'marche_normale',
     difficile: 'Alterne pied droit et pied gauche, intérieur et extérieur du pied, à allure de marche rapide.',
     securite: 'Terrain plat, sans trous ni objets. Au demi-tour, tourne en petits pas plutôt qu’en pivotant sur un pied.',
-    anim: { vue: 'profil', durees: CONDUITE.durees, poses: CONDUITE.poses, decor: [{ type: 'ballon', x: CONDUITE.xs[0]!, xs: CONDUITE.xs }], zones: ['tibiaG', 'tibiaD'] },
+    anim: { vue: 'profil', durees: CONDUITE.durees, poses: CONDUITE.poses, decor: [{ type: 'ballon', x: CONDUITE.xs[0]!, xs: CONDUITE.xs }], zones: ['cuisseG', 'cuisseD'] },
   }),
   ex({
     id: 'slalom_plots', nom: 'Slalom ballon au pied', icone: '🔀', met: 3.5, cat: 'Football',
@@ -1039,7 +1039,7 @@ export const EXERCICES: Record<string, Exercice> = Object.fromEntries([
     securite: 'Tourne en petits pas : jamais de pivot brusque sur le genou.',
     anim: { vue: 'profil', durees: SLALOM.durees, poses: SLALOM.poses, decor: [
       { type: 'plot', x: 104 }, { type: 'plot', x: 160 }, { type: 'ballon', x: SLALOM.xs[0]!, xs: SLALOM.xs },
-    ], zones: ['tibiaG', 'tibiaD'] },
+    ], zones: ['cuisseG', 'cuisseD'] },
   }),
   ex({
     id: 'passe_mur', nom: 'Passes contre un mur', icone: '🧱', met: 3.5, cat: 'Football',

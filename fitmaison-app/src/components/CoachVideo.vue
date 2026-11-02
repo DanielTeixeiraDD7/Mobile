@@ -157,7 +157,8 @@ function cadreCible(): [number, number, number, number] {
   const large = camera.value === 'large';
   const [x, y, w] = emprise(props.ex.anim, large);
   const m = large ? 20 : 6;
-  const haut = Math.max(-20, y - m), sol = SOL + (large ? 8 : 4);
+  // En haut : place pour les badges (vue, ralenti, compteur).
+  const haut = Math.max(-24, y - m - (large ? 4 : 16)), sol = SOL + (large ? 8 : 4);
   // Place sous le sol pour la barre de commandes (le coach ne passe jamais dessous).
   const bas = sol + (sol - haut) * 0.3;
   return [x - m, haut, w + 2 * m, bas - haut];
@@ -240,8 +241,13 @@ const NOMS_ZONES: Record<string, string> = { tronc: 'abdos et gainage', cuisse: 
 const zones = computed(() => [...new Set((props.ex.anim.zones ?? []).map((z: Segment) => NOMS_ZONES[z.replace(/[GD]$/, '')] ?? z))]);
 const DECOR: Record<string, string> = { ballon: '⚽ Ballon', plot: '🔶 Plots', bureau: '💻 Bureau' };
 const materiel = computed(() => {
-  const l = props.ex.materiel.map(m => MATERIEL[m]).filter(Boolean).map(m => `${m.icone} ${m.nom.replace(/^(Une?|Un) /, '')}`);
-  for (const d of props.ex.anim.decor ?? []) { const x = DECOR[d.type]; if (x && !l.includes(x)) l.push(x); }
+  const nom = (n: string) => { const x = n.replace(/^(Une?|Des) /i, ''); return x.charAt(0).toUpperCase() + x.slice(1); };
+  const l = props.ex.materiel.map(m => MATERIEL[m]).filter(Boolean).map(m => `${m.icone} ${nom(m.nom)}`);
+  const vus = new Set(l.map(x => x.toLowerCase()));
+  for (const d of props.ex.anim.decor ?? []) {
+    const x = DECOR[d.type];
+    if (x && !vus.has(x.toLowerCase()) && !(props.ex.materiel as string[]).some(m => m === d.type || m === d.type + 's')) { l.push(x); vus.add(x.toLowerCase()); }
+  }
   return l;
 });
 const libelleRep = computed(() => (props.ex.tenue ? 'secondes tenues' : props.ex.anim.cycle ? 'tour' : 'répétition'));
@@ -445,8 +451,12 @@ const valeurRep = computed(() => (props.ex.tenue ? tenuAffiche.value : rep.value
 .cv.plein .ecran { aspect-ratio: auto; width: 100%; height: 100%; border-radius: 0; border: 0; }
 .cv.plein .infos { display: none; }
 .cv.plein { position: relative; }
-.cv.plein .st-bar { position: absolute; left: 0; right: 0; bottom: calc(84px + var(--safe-b, 0px)); margin: 0; background: none; box-shadow: none; }
-.cv.plein .bas { padding-top: 150px; padding-bottom: calc(10px + var(--safe-b, 0px)); }
+.cv.plein .st-bar { position: absolute; left: 0; right: 0; bottom: calc(84px + var(--safe-b, 0px)); margin: 0; background: none; box-shadow: none; border-radius: 0; }
+/* Le coach s'arrête au-dessus des sous-titres et des commandes : rien ne le cache. */
+.cv.plein .ecran { background: #0b110d; }
+.cv.plein .fig { bottom: calc(196px + var(--safe-b, 0px)); height: auto; }
+.cv.plein .bas { background: none; }
+.cv.plein .bas { padding-top: 8px; padding-bottom: calc(10px + var(--safe-b, 0px)); }
 .cv.plein .st-texte p { font-size: 18px; }
 .cv.pseudo { position: fixed; inset: 0; z-index: 200; }
 @media (prefers-reduced-motion: reduce) { .st-enter-active, .st-leave-active, .pop-enter-active, .pop-leave-active { transition: none; } }

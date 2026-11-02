@@ -78,7 +78,7 @@ Une semaine type va du lundi au dimanche. Le dimanche est un jour de repos, ou d
 
   L'échauffement et le retour au calme durent 5 min de marche, comme dans Couch to 5K.
 - **Le renforcement 2 fois par semaine** pendant tout le plan (OMS [S1]). Les niveaux de Renfo et Full body suivent le niveau du profil, qui s'ajuste déjà selon le ressenti des séances.
-- **Prévention inspirée du FIFA 11+** : planche, pont (puis pont avec marche), équilibre sur une jambe, squat puis fente arrière, déplacements latéraux, mollets. Il n'y a pas de partie pliométrique, ni l'ischio « nordique » qui demande un partenaire. Elle est faite **2 fois par semaine ou plus** à partir de la phase Moteur : chaque vendredi, plus l'échauffement de la séance Ballon.
+- **Prévention inspirée du FIFA 11+** : planche, pont (puis pont avec marche), équilibre sur une jambe, squat puis fente arrière, déplacements latéraux, mollets. Il n'y a pas de partie pliométrique, ni l'ischio « nordique » qui demande un partenaire. Elle est faite **1 fois par semaine** (le vendredi) à partir de la phase Moteur, pour apprendre les gestes et construire l'habitude. Les études montrent un effet **à partir de 2 fois par semaine, en échauffement avant le football** [S9]. C'est pourquoi l'étape finale conseille de faire le 11+ complet avant chaque entraînement. **Limite assumée** : avant la reprise du foot, le plan ne reproduit pas la fréquence du 11+.
 
 ## 3. Progression conditionnée par les bilans (pas seulement par le temps)
 
