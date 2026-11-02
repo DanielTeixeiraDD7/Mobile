@@ -15,7 +15,14 @@ export type Point = 'hanche' | 'cou' | 'mainG' | 'mainD' | 'chevilleG' | 'chevil
 export interface Ancre { x?: [Point, number]; y?: [Point, number] }
 
 export type Segment = 'tronc' | 'cuisseG' | 'tibiaG' | 'cuisseD' | 'tibiaD' | 'brasG' | 'avbrasG' | 'brasD' | 'avbrasD';
-export interface Decor { type: 'chaise' | 'mur' | 'marche' | 'table' | 'tapis' | 'porte'; x: number; sens?: 1 | -1 }
+export interface Decor {
+  type: 'chaise' | 'mur' | 'marche' | 'table' | 'tapis' | 'porte' | 'ballon' | 'plot' | 'bureau';
+  x: number;
+  sens?: 1 | -1;
+  /** Objet mobile (ballon) : position par pose clé, interpolée comme le corps. y = centre (défaut : posé au sol). */
+  xs?: number[];
+  ys?: number[];
+}
 export interface Animation {
   vue: Vue;
   poses: Pose[];
