@@ -49,6 +49,8 @@ const avant = computed(() => !!plan.value && !j.value);
 const semaine = computed(() => (plan.value ? semaineDuPlan(fit.etat, j.value ? fit.date : plan.value.debut) : []));
 const chrono = computed(() => (plan.value ? chronologie(fit.etat, fit.date) : []));
 const progres = computed(() => (plan.value ? progresPhase(fit.etat, fit.date) : null));
+/** Bilan de départ : affiché une seule fois dans la semaine (premier jour possible). */
+const premierJourDepart = computed(() => (plan.value ? (plan.value.debut > fit.date ? plan.value.debut : fit.date) : ''));
 const bilanSuivant = computed(() => (plan.value ? prochainBilan(fit.etat, fit.date) : null));
 const jalons = computed(() => jalonsFoot(fit.etat, fit.date));
 const reprise = computed(() => (plan.value ? repriseConseillee(fit.etat, fit.date) : 0));
@@ -178,8 +180,8 @@ const feuVert = computed({ get: () => !!plan.value?.sante?.avisMedical, set: v =
           <li v-for="q in QUESTIONS_SANTE" :key="q.id">
             <span class="grow small">{{ q.q }}</span>
             <div class="seg ouinon" role="group" :aria-label="q.q">
-              <button type="button" :class="{ on: reponses[q.id] === false }" @click="reponses[q.id] = false">Non</button>
-              <button type="button" :class="{ on: reponses[q.id] === true }" @click="reponses[q.id] = true">Oui</button>
+              <button type="button" :aria-pressed="reponses[q.id] === false" :class="{ on: reponses[q.id] === false }" @click="reponses[q.id] = false">Non</button>
+              <button type="button" :aria-pressed="reponses[q.id] === true" :class="{ on: reponses[q.id] === true }" @click="reponses[q.id] = true">Oui</button>
             </div>
           </li>
         </ul>
@@ -269,7 +271,7 @@ const feuVert = computed({ get: () => !!plan.value?.sante?.avisMedical, set: v =
                 <span class="ic" aria-hidden="true">{{ d && faitLe(d.date, d.seance?.type) && d.seance ? '✅' : d?.seance ? SEANCES[d.seance.type].icone : '😌' }}</span>
                 <b class="tiny nm">{{ d?.seance ? COURT[d.seance.type] : 'Repos' }}</b>
                 <small v-if="d?.seance" class="tiny dim">{{ minutes(d.seance.type, d.seance.niveau) }} min · N{{ d.seance.niveau }}</small>
-                <span v-if="d?.bilan" class="tag volt bilan">Bilan</span>
+                <span v-if="d?.bilan && (d.bilan !== 'depart' || d.date === premierJourDepart)" class="tag volt bilan">Bilan</span>
               </div>
             </div>
           </section>

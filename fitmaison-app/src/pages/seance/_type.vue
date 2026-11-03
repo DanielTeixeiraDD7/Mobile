@@ -8,13 +8,21 @@ import { minutes } from '@/core/dates';
 import { lancerSeance, ouvrirFiche } from '@/composables/useSeance';
 import Icone from '@/components/Icone.vue';
 import Figurine from '@/components/Figurine.vue';
+import { SIGNAUX_ARRET, consigneIntensite, jourPlan } from '@/core/plan';
+import type { Niveau } from '@/core/programmes';
 
 /** Avant de commencer : matériel à préparer, exercices de la séance (avec démo), durée. */
 const route = useRoute();
 const router = useRouter();
 const fit = useFit();
 const type = computed(() => (TYPES.includes(route.params.type as TypeSeance) ? (route.params.type as TypeSeance) : 'full'));
-const etapes = computed(() => construire(type.value, fit.profil!.level, { vus: fit.etat.vus, demo: fit.reglages.demo !== false, remplacements: fit.etat.remplacements }));
+/** Niveau prescrit par le plan si cette séance est celle du jour, sinon le niveau du profil. */
+const prescrit = computed(() => {
+  const s = fit.etat.plan ? jourPlan(fit.etat, fit.date)?.seance : null;
+  return s && s.type === type.value ? s : null;
+});
+const niveau = computed<Niveau>(() => prescrit.value?.niveau ?? fit.profil!.level);
+const etapes = computed(() => construire(type.value, niveau.value, { vus: fit.etat.vus, demo: fit.reglages.demo !== false, remplacements: fit.etat.remplacements }));
 const exos = computed(() => exercicesSeance(etapes.value).map(id => EXERCICES[id]!));
 const materiel = computed(() => materielSeance(etapes.value).map(m => ({ id: m, ...MATERIEL[m] })));
 const nouveaux = computed(() => exos.value.filter(e => !(fit.etat.vus ?? []).includes(e.id)).length);
@@ -35,7 +43,7 @@ function retour() { if (history.length > 1) router.back(); else router.push('/se
 
     <header class="card pitch hero">
       <div class="h-txt">
-        <p class="kicker">Séance · niveau {{ fit.profil!.level }} {{ NIVEAUX[fit.profil!.level].nom }}</p>
+        <p class="kicker">Séance · niveau {{ niveau }} {{ NIVEAUX[niveau].nom }}{{ prescrit ? ' · prévue par ton plan' : '' }}</p>
         <h1 class="display">{{ SEANCES[type].nom }}</h1>
         <p class="desc">{{ SEANCES[type].desc }}</p>
       </div>
@@ -84,9 +92,15 @@ function retour() { if (history.length > 1) router.back(); else router.push('/se
     </label>
 
     <div class="cta">
-      <button type="button" class="btn primary lg full" @click="lancerSeance(type)"><Icone nom="play" :taille="22" /> Commencer la séance</button>
+      <button type="button" class="btn primary lg full" @click="lancerSeance(type, prescrit ? { niveau: prescrit.niveau, plan: true } : {})"><Icone nom="play" :taille="22" /> Commencer la séance</button>
     </div>
-    <p class="tiny muted center note">L’écran reste allumé. La voix annonce chaque exercice et le changement de côté. Arrête-toi en cas de douleur, de vertige ou d’essoufflement anormal.</p>
+    <p class="banner info section intensite"><Icone nom="info" :taille="18" /> {{ consigneIntensite(type) }}</p>
+    <details class="card pad section arret">
+      <summary><b>Arrête-toi tout de suite si…</b></summary>
+      <ul><li v-for="x in SIGNAUX_ARRET" :key="x">{{ x }}</li></ul>
+      <small class="muted">En cas de douleur dans la poitrine qui ne passe pas au repos : appelle le 112 (urgences).</small>
+    </details>
+    <p class="tiny muted center note">L’écran reste allumé. La voix annonce chaque exercice et le changement de côté.</p>
   </div>
 </template>
 
@@ -121,6 +135,8 @@ function retour() { if (history.length > 1) router.back(); else router.push('/se
 .bascule small { color: var(--muted); font-size: 13px; }
 .cta { position: sticky; bottom: calc(var(--tab-h) + var(--safe-b) + 22px); margin-top: 20px; z-index: 5; }
 .note { margin: 10px 8px 0; }
+.arret summary { cursor: pointer; color: var(--bad); }
+.arret ul { margin: 10px 0 6px; padding-left: 20px; display: grid; gap: 4px; font-size: 14px; }
 @media (min-width: 992px) {
   .hero { padding: 28px 30px; }
   .hero h1 { font-size: 56px; }

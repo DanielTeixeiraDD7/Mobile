@@ -157,3 +157,49 @@ describe('rendu du coach', () => {
     }
   });
 });
+
+// ---- Appuis réalistes : ce qui doit toucher le sol y reste, la tête ne sert jamais d'appui ----
+const AU_SOL = 4;
+/** Pour chaque exercice : groupes de points dont au moins un doit toucher le sol dans TOUTES les images. */
+const APPUIS: Record<string, (keyof Squelette)[][]> = {
+  pont: [['chevilleG'], ['chevilleD']],
+  pont_marche: [['chevilleG', 'chevilleD']],
+  planche: [['coudeG', 'coudeD'], ['piedG', 'piedD']],
+  planche_genoux: [['coudeG', 'coudeD'], ['genouG', 'genouD']],
+  pompes_genoux: [['mainG', 'mainD'], ['genouG', 'genouD']],
+  bird_dog: [['mainG', 'mainD'], ['genouG', 'genouD']],
+  etirement_dos: [['genouG', 'genouD'], ['chevilleG', 'chevilleD']],
+  burpee_sans_saut: [['piedG', 'piedD']],
+  // Talons au sol (cheville posée) pendant tout le squat / l'assis-debout.
+  squat: [['chevilleG'], ['chevilleD']],
+  squat_chaise: [['chevilleG'], ['chevilleD']],
+  assis_debout: [['chevilleG'], ['chevilleD']],
+  chaise_mur: [['chevilleG'], ['chevilleD']],
+  dips_chaise: [['chevilleG'], ['chevilleD']],
+};
+
+describe('appuis au sol', () => {
+  it.each(Object.entries(APPUIS))('%s : les appuis prévus restent au sol', (id, groupes) => {
+    const e = EXERCICES[id]!;
+    const c = dureeCycle(e.anim);
+    for (let i = 0; i < 40; i++) {
+      const s = image(e.anim, (c * i) / 40);
+      for (const g of groupes) {
+        const h = Math.min(...g.map(k => SOL - s[k][1]));
+        expect(h, `${id} ${g.join('/')} à t=${((c * i) / 40).toFixed(2)}`).toBeLessThanOrEqual(AU_SOL);
+      }
+    }
+  });
+
+  it.each(ex.map(e => [e.id, e] as const))('%s : la tête ne porte jamais le poids du corps', (_, e) => {
+    const c = dureeCycle(e.anim);
+    for (let i = 0; i < 40; i++) {
+      const s = image(e.anim, (c * i) / 40);
+      if (SOL - (s.tete[1] + 10) > 1.5) continue;
+      // Tête posée : les épaules sont au sol elles aussi (allongé) et la tête ne passe pas sous les épaules.
+      const t = `t=${((c * i) / 40).toFixed(2)}`;
+      expect(SOL - s.cou[1], `épaules ${t}`).toBeLessThanOrEqual(11);
+      expect(s.tete[1] - s.cou[1], `tête sous les épaules ${t}`).toBeLessThanOrEqual(2);
+    }
+  });
+});

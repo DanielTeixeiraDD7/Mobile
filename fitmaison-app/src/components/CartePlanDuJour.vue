@@ -5,6 +5,7 @@ import { construire, duree } from '@/core/seance';
 import { DUREE_MIN_SEMAINES, jourPlan, PHASES } from '@/core/plan';
 import { lancerSeance } from '@/composables/useSeance';
 import { toast } from '@/composables/useToast';
+import { lireDate } from '@/core/dates';
 import Icone from './Icone.vue';
 
 /** Carte compacte « plan du jour » pour l'accueil (sans props, lit le store). */
@@ -16,6 +17,7 @@ const faite = computed(() => !!j.value?.seance && fit.etat.sessions.some(s => s.
 const dureeMin = computed(() => (j.value?.seance ? Math.round(duree(construire(j.value.seance.type, j.value.seance.niveau)) / 60) : 0));
 const pauses = computed(() => jour.value.pauses ?? 0);
 const pctPas = computed(() => (j.value ? Math.min(100, (jour.value.steps / j.value.pas) * 100) : 0));
+const debutTexte = computed(() => (fit.etat.plan ? lireDate(fit.etat.plan.debut).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : ''));
 const numPhase = computed(() => (j.value ? PHASES.findIndex(p => p.id === j.value!.phase.id) + 1 : 0));
 
 function demarrer() {
@@ -40,7 +42,9 @@ function pause() {
 
   <router-link v-else-if="!j" to="/plan" class="card pad carte-plan">
     <p class="kicker">Plan · Objectif foot</p>
-    <p class="small muted">Ton plan commence bientôt. Ouvre-le pour voir la première semaine.</p>
+    <h2 class="display titre">Départ {{ debutTexte }}</h2>
+    <p class="small muted">D’ici là : fais ton bilan de départ (10 min, dans le plan) et une marche tranquille chaque jour. Lève-toi aussi de ta chaise toutes les heures.</p>
+    <span class="btn primary">Faire mon bilan de départ <Icone nom="droite" :taille="18" /></span>
   </router-link>
 
   <section v-else class="card pitch carte-plan" aria-label="Plan du jour">

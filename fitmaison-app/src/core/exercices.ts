@@ -393,9 +393,9 @@ export const EXERCICES: Record<string, Exercice> = Object.fromEntries([
     anim: { vue: 'profil', durees: [0.7, 0.55, 0.55, 0.55, 0.55, 0.7], poses: [
       { ancre: { x: ['cheville', 85] } },
       { buste: 62, cuisseG: 105, tibiaG: -30, cuisseD: 105, tibiaD: -30, brasG: 5, avbrasG: 5, brasD: 5, avbrasD: 5, ancre: { x: ['cheville', 85] } },
-      { buste: 75, cuisseG: 105, tibiaG: -30, cuisseD: -75, tibiaD: -75, brasG: 3, avbrasG: 3, brasD: 3, avbrasD: 3, ancre: { x: ['main', 132] } },
-      { buste: 78, cuisseG: -78, tibiaG: -78, cuisseD: -78, tibiaD: -78, brasG: 0, avbrasG: 0, brasD: 0, avbrasD: 0, ancre: { x: ['main', 132] } },
-      { buste: 75, cuisseD: 105, tibiaD: -30, cuisseG: -75, tibiaG: -75, brasG: 3, avbrasG: 3, brasD: 3, avbrasD: 3, ancre: { x: ['main', 132] } },
+      { buste: 65, cuisseG: 100, tibiaG: -20, cuisseD: -75, tibiaD: -75, brasG: 3, avbrasG: 3, brasD: 3, avbrasD: 3, ancre: { x: ['main', 132] } },
+      { buste: 71.5, cuisseG: -71.5, tibiaG: -71.5, cuisseD: -71.5, tibiaD: -71.5, brasG: 0, avbrasG: 0, brasD: 0, avbrasD: 0, ancre: { x: ['main', 132] } },
+      { buste: 65, cuisseD: 100, tibiaD: -20, cuisseG: -75, tibiaG: -75, brasG: 3, avbrasG: 3, brasD: 3, avbrasD: 3, ancre: { x: ['main', 132] } },
       { buste: 62, cuisseG: 105, tibiaG: -30, cuisseD: 105, tibiaD: -30, brasG: 5, avbrasG: 5, brasD: 5, avbrasD: 5, ancre: { x: ['cheville', 85] } },
     ], zones: ['tronc', 'cuisseG', 'cuisseD', 'brasD'] },
   }),
@@ -415,9 +415,9 @@ export const EXERCICES: Record<string, Exercice> = Object.fromEntries([
     facile: 'Assieds-toi vraiment sur la chaise puis relève-toi.',
     difficile: 'Squat sans chaise, ou pause de 2 secondes en bas.',
     securite: 'Chaise stable, calée contre un mur.',
-    anim: { vue: 'profil', durees: [1.6, 1.0], decor: [{ type: 'chaise', x: 58, sens: -1 }], ancre: { x: ['cheville', 106] }, poses: [
+    anim: { vue: 'profil', durees: [1.6, 1.0], decor: [{ type: 'chaise', x: 64 }], ancre: { x: ['cheville', 106] }, poses: [
       { brasG: 10, avbrasG: 10, brasD: 10, avbrasD: 10 },
-      { buste: 38, cuisseG: 78, tibiaG: -18, cuisseD: 78, tibiaD: -18, brasG: 88, avbrasG: 88, brasD: 88, avbrasD: 88 },
+      { buste: 38, cuisseG: 78, tibiaG: -18, cuisseD: 78, tibiaD: -18, piedG: 90, piedD: 90, brasG: 88, avbrasG: 88, brasD: 88, avbrasD: 88 },
     ], zones: ['cuisseG', 'cuisseD'] },
   }),
   ex({
@@ -435,7 +435,7 @@ export const EXERCICES: Record<string, Exercice> = Object.fromEntries([
     difficile: 'Pause de 2 secondes en bas, ou descente sur 4 secondes.',
     anim: { vue: 'profil', durees: [1.6, 1.0], ancre: { x: ['cheville', 100] }, poses: [
       { brasG: 10, avbrasG: 10, brasD: 10, avbrasD: 10 },
-      { buste: 45, cuisseG: 88, tibiaG: -25, cuisseD: 88, tibiaD: -25, brasG: 92, avbrasG: 92, brasD: 92, avbrasD: 92 },
+      { buste: 45, cuisseG: 88, tibiaG: -25, cuisseD: 88, tibiaD: -25, piedG: 90, piedD: 90, brasG: 92, avbrasG: 92, brasD: 92, avbrasD: 92 },
     ], zones: ['cuisseG', 'cuisseD'] },
   }),
   ex({
@@ -578,9 +578,9 @@ export const EXERCICES: Record<string, Exercice> = Object.fromEntries([
     erreurs: ['Fesses en arrière (le corps fait un angle)', 'Tête qui descend avant la poitrine'],
     sensation: 'Poitrine et arrière des bras ; le ventre travaille pour rester droit.',
     facile: 'Pompes inclinées.', versionFacile: 'pompes_inclinees',
-    anim: { vue: 'profil', durees: [1.4, 1.0], decor: [{ type: 'tapis', x: 100 }], ancre: { x: ['main', 140] }, poses: [
-      { buste: 62, cuisseG: -62, tibiaG: -95, cuisseD: -62, tibiaD: -95, brasG: 4, avbrasG: 4, brasD: 4, avbrasD: 4, piedG: -60, piedD: -60 },
-      { buste: 80, cuisseG: -80, tibiaG: -95, cuisseD: -80, tibiaD: -95, brasG: -95, avbrasG: 35, brasD: -95, avbrasD: 35, piedG: -60, piedD: -60 },
+    anim: { vue: 'profil', durees: [1.4, 1.0], decor: [{ type: 'tapis', x: 100 }], ancre: { x: ['main', 140], y: ['genouG', SOL - 3.5] }, poses: [
+      { buste: 55, cuisseG: -55, tibiaG: -95, cuisseD: -55, tibiaD: -95, brasG: 0, avbrasG: 0, brasD: 0, avbrasD: 0, piedG: -60, piedD: -60 },
+      { buste: 78.4, cuisseG: -78.4, tibiaG: -95, cuisseD: -78.4, tibiaD: -95, brasG: -95, avbrasG: 35, brasD: -95, avbrasD: 35, piedG: -60, piedD: -60 },
     ], zones: ['brasG', 'avbrasG', 'brasD', 'avbrasD', 'tronc'] },
   }),
   ex({
@@ -612,7 +612,7 @@ export const EXERCICES: Record<string, Exercice> = Object.fromEntries([
     sensation: 'L’arrière des bras. Une douleur devant l’épaule = descends moins.',
     facile: 'Pieds plus proches de la chaise, petite amplitude.', versionFacile: 'pompes_mur',
     securite: 'Chaise stable, calée contre un mur, sans roulettes.',
-    anim: { vue: 'profil', durees: [1.3, 1.0], decor: [{ type: 'chaise', x: 56, sens: -1 }], ancre: { x: ['main', 68], y: ['main', SOL - HAUTEUR.chaise] }, poses: [
+    anim: { vue: 'profil', durees: [1.3, 1.0], decor: [{ type: 'chaise', x: 54 }], ancre: { x: ['main', 68], y: ['main', SOL - HAUTEUR.chaise] }, poses: [
       { buste: -4, cuisseG: 80, tibiaG: 10, cuisseD: 80, tibiaD: 10, brasG: -22, avbrasG: -8, brasD: -22, avbrasD: -8 },
       { buste: -4, cuisseG: 109, tibiaG: 12, cuisseD: 109, tibiaD: 12, brasG: -78, avbrasG: 12, brasD: -78, avbrasD: 12 },
     ], zones: ['brasG', 'brasD'] },
@@ -631,8 +631,8 @@ export const EXERCICES: Record<string, Exercice> = Object.fromEntries([
     sensation: 'Le ventre tremble un peu : c’est le gainage qui travaille. Pas de douleur au dos.',
     difficile: 'Planche sur les pieds.',
     anim: { vue: 'profil', durees: [2, 2], decor: [{ type: 'tapis', x: 100 }], ancre: { x: ['hanche', 92] }, poses: [
-      { buste: 78, cuisseG: -78, tibiaG: -92, cuisseD: -78, tibiaD: -92, brasG: 0, avbrasG: 90, brasD: 0, avbrasD: 90, piedG: -150, piedD: -150 },
-      { buste: 79, cuisseG: -79, tibiaG: -92, cuisseD: -79, tibiaD: -92, brasG: 0, avbrasG: 90, brasD: 0, avbrasD: 90, piedG: -150, piedD: -150 },
+      { buste: 72.5, cuisseG: -72.5, tibiaG: -92, cuisseD: -72.5, tibiaD: -92, brasG: 0, avbrasG: 90, brasD: 0, avbrasD: 90, piedG: -150, piedD: -150 },
+      { buste: 73.5, cuisseG: -73.5, tibiaG: -92, cuisseD: -73.5, tibiaD: -92, brasG: 0, avbrasG: 90, brasD: 0, avbrasD: 90, piedG: -150, piedD: -150 },
     ], zones: ['tronc'] },
   }),
   ex({
@@ -647,8 +647,8 @@ export const EXERCICES: Record<string, Exercice> = Object.fromEntries([
     sensation: 'Le ventre et les épaules travaillent. Douleur dans le bas du dos = genoux au sol.',
     facile: 'Planche sur les genoux.', versionFacile: 'planche_genoux',
     anim: { vue: 'profil', durees: [2, 2], decor: [{ type: 'tapis', x: 100 }], ancre: { x: ['hanche', 96] }, poses: [
-      { buste: 80, cuisseG: -80, tibiaG: -80, cuisseD: -80, tibiaD: -80, brasG: 0, avbrasG: 90, brasD: 0, avbrasD: 90, piedG: 10, piedD: 10 },
-      { buste: 81, cuisseG: -81, tibiaG: -81, cuisseD: -81, tibiaD: -81, brasG: 0, avbrasG: 90, brasD: 0, avbrasD: 90, piedG: 10, piedD: 10 },
+      { buste: 82.8, cuisseG: -82.8, tibiaG: -82.8, cuisseD: -82.8, tibiaD: -82.8, brasG: 0, avbrasG: 90, brasD: 0, avbrasD: 90, piedG: 10, piedD: 10 },
+      { buste: 83.5, cuisseG: -83.5, tibiaG: -83.5, cuisseD: -83.5, tibiaD: -83.5, brasG: 0, avbrasG: 90, brasD: 0, avbrasD: 90, piedG: 10, piedD: 10 },
     ], zones: ['tronc', 'cuisseG', 'cuisseD'] },
   }),
   ex({
@@ -663,10 +663,10 @@ export const EXERCICES: Record<string, Exercice> = Object.fromEntries([
     sensation: 'Le ventre et le bas du dos travaillent pour te stabiliser.',
     facile: 'Tends seulement le bras, puis seulement la jambe.',
     anim: { vue: 'profil', durees: [0.9, 1.0, 0.9, 1.0], decor: [{ type: 'tapis', x: 100 }], ancre: { x: ['hanche', 86] }, poses: [
-      { buste: 90, cuisseG: 0, tibiaG: -90, cuisseD: 0, tibiaD: -90, brasG: 0, avbrasG: 0, brasD: 0, avbrasD: 0, piedG: -170, piedD: -170 },
-      { buste: 90, cuisseG: -92, tibiaG: -92, cuisseD: 0, tibiaD: -90, brasG: 0, avbrasG: 0, brasD: 92, avbrasD: 92, piedG: -170, piedD: -170 },
-      { buste: 90, cuisseG: 0, tibiaG: -90, cuisseD: 0, tibiaD: -90, brasG: 0, avbrasG: 0, brasD: 0, avbrasD: 0, piedG: -170, piedD: -170 },
-      { buste: 90, cuisseD: -92, tibiaD: -92, cuisseG: 0, tibiaG: -90, brasD: 0, avbrasD: 0, brasG: 92, avbrasG: 92, piedG: -170, piedD: -170 },
+      { buste: 76, cuisseG: 0, tibiaG: -90, cuisseD: 0, tibiaD: -90, brasG: 0, avbrasG: 0, brasD: 0, avbrasD: 0, piedG: -90, piedD: -90 },
+      { buste: 76, cuisseG: -92, tibiaG: -92, cuisseD: 0, tibiaD: -90, brasG: 0, avbrasG: 0, brasD: 92, avbrasD: 92, piedG: -170, piedD: -90 },
+      { buste: 76, cuisseG: 0, tibiaG: -90, cuisseD: 0, tibiaD: -90, brasG: 0, avbrasG: 0, brasD: 0, avbrasD: 0, piedG: -90, piedD: -90 },
+      { buste: 76, cuisseD: -92, tibiaD: -92, cuisseG: 0, tibiaG: -90, brasD: 0, avbrasD: 0, brasG: 92, avbrasG: 92, piedG: -90, piedD: -170 },
     ], zones: ['tronc'] },
   }),
   ex({
@@ -749,8 +749,8 @@ export const EXERCICES: Record<string, Exercice> = Object.fromEntries([
     facile: 'Coussin entre les fesses et les talons.',
     securite: 'Douleur aux genoux : coussin sous les genoux, ou fais l’étirement assis.',
     anim: { vue: 'profil', durees: [2.5, 2.5], decor: [{ type: 'tapis', x: 100 }], ancre: { x: ['hanche', 74] }, poses: [
-      { buste: 112, cuisseG: 62, tibiaG: -92, cuisseD: 62, tibiaD: -92, brasG: 96, avbrasG: 92, brasD: 96, avbrasD: 92, piedG: -175, piedD: -175, tete: 10 },
-      { buste: 108, cuisseG: 64, tibiaG: -92, cuisseD: 64, tibiaD: -92, brasG: 96, avbrasG: 92, brasD: 96, avbrasD: 92, piedG: -175, piedD: -175, tete: 10 },
+      { buste: 100, cuisseG: 72, tibiaG: -90, cuisseD: 72, tibiaD: -90, brasG: 84, avbrasG: 86, brasD: 84, avbrasD: 86, piedG: -95, piedD: -95, tete: 20 },
+      { buste: 98, cuisseG: 73, tibiaG: -90, cuisseD: 73, tibiaD: -90, brasG: 84, avbrasG: 86, brasD: 84, avbrasD: 86, piedG: -95, piedD: -95, tete: 17 },
     ], zones: ['tronc'] },
   }),
   ex({
@@ -787,11 +787,11 @@ export const EXERCICES: Record<string, Exercice> = Object.fromEntries([
     difficile: 'Descente sur 4 secondes, ou squat sur chaise (sans t’asseoir).',
     securite: 'Chaise SANS roulettes, calée contre un mur ou le bureau. Si ta chaise de bureau roule, prends une chaise fixe.',
     anim: { vue: 'profil', durees: [0.8, 1.3, 0.7, 1.5, 1.5], decor: [{ type: 'chaise', x: CHAISE }], ancre: { x: ['cheville', 100] }, poses: [
-      { buste: 6, cuisseG: 80, tibiaG: -8, cuisseD: 80, tibiaD: -8, brasG: 75, avbrasG: 85, brasD: 75, avbrasD: 85 },
-      { buste: 42, cuisseG: 80, tibiaG: -8, cuisseD: 80, tibiaD: -8, brasG: 88, avbrasG: 90, brasD: 88, avbrasD: 90 },
+      { buste: 6, cuisseG: 80, tibiaG: -8, cuisseD: 80, tibiaD: -8, piedG: 90, piedD: 90, brasG: 75, avbrasG: 85, brasD: 75, avbrasD: 85 },
+      { buste: 42, cuisseG: 80, tibiaG: -8, cuisseD: 80, tibiaD: -8, piedG: 90, piedD: 90, brasG: 88, avbrasG: 90, brasD: 88, avbrasD: 90 },
       { brasG: 8, avbrasG: 10, brasD: 8, avbrasD: 10 },
       { brasG: 8, avbrasG: 10, brasD: 8, avbrasD: 10 },
-      { buste: 32, cuisseG: 52, tibiaG: -10, cuisseD: 52, tibiaD: -10, brasG: 85, avbrasG: 88, brasD: 85, avbrasD: 88 },
+      { buste: 32, cuisseG: 52, tibiaG: -10, cuisseD: 52, tibiaD: -10, piedG: 90, piedD: 90, brasG: 85, avbrasG: 88, brasD: 85, avbrasD: 88 },
     ], zones: ['cuisseG', 'cuisseD'] },
   }),
   ex({

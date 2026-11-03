@@ -452,7 +452,7 @@ export const QUESTIONS_SANTE = [
 export function avisMedicalConseille(e: Etat): { conseille: boolean; raisons: string[] } {
   const raisons: string[] = [];
   const p = e.profile;
-  if (p) { const v = imc(p, poidsActuel(e)); if (v >= 35) raisons.push(`IMC de ${v.toFixed(1).replace('.', ',')} (≥ 35)`); }
+  if (p) { const v = imc(p, poidsActuel(e)); if (v >= 35) raisons.push(`IMC de ${v.toFixed(1).replace('.', ',')}, au-dessus de 35`); }
   const oui = e.plan?.sante?.oui ?? [];
   if (oui.includes('souffle')) raisons.push('essoufflement marqué pour un petit effort');
   const autres = oui.filter(o => o !== 'souffle').length;

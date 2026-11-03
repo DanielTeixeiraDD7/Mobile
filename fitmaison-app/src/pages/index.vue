@@ -27,6 +27,7 @@ const faiteAujourdhui = computed(() => fit.etat.sessions.some(s => s.date === fi
 const typeDuJour = computed(() => (jp.value ? jp.value.seance?.type ?? null : PLANNING[new Date().getDay()] ?? null));
 const focus = computed(() => {
   if (faiteAujourdhui.value) return 'Séance faite ✔ Récupère, marche, hydrate-toi.';
+  if (fit.etat.plan && !jp.value) return 'Ton plan démarre bientôt : bilan de départ et marche tranquille.';
   if (typeDuJour.value) return `Au programme : ${SEANCES[typeDuJour.value].nom.toLowerCase()}.`;
   return 'Repos actif : une marche tranquille suffit.';
 });
