@@ -1,0 +1,535 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PLAYER
+  ADMIN
+}
+
+enum Rarity {
+  COMMON
+  UNCOMMON
+  RARE
+  EPIC
+  LEGENDARY
+  SECRET
+}
+
+enum Faction {
+  SANG
+  CROC
+  ABIME
+  SPECTRE
+  ALCHIMIE
+  CRYPTIDE
+  MYTHE
+}
+
+enum Variant {
+  NORMAL
+  HOLO
+  FULL_ART
+  ALTERNATE
+}
+
+enum Form {
+  HUMAN
+  MONSTER
+}
+
+enum Currency {
+  SHARDS
+  EMBERS
+  DUST
+}
+
+enum LedgerReason {
+  PURCHASE
+  PACK_OPEN
+  DUPLICATE_RECYCLE
+  CRAFT
+  MISSION
+  DAILY_LOGIN
+  SUBSCRIPTION_BONUS
+  COSMETIC
+  REFUND
+  CHARGEBACK
+  ADMIN
+  WELCOME
+}
+
+enum PullSource {
+  FREE
+  EMBERS
+  SHARDS
+}
+
+enum TokenType {
+  VERIFY_EMAIL
+  RESET_PASSWORD
+}
+
+enum TradeStatus {
+  PENDING
+  ACCEPTED
+  COMPLETED
+  DECLINED
+  CANCELLED
+}
+
+enum TradeSide {
+  PROPOSER
+  RECEIVER
+}
+
+enum MissionPeriod {
+  DAILY
+  WEEKLY
+}
+
+enum MissionKind {
+  LOGIN
+  OPEN_PACKS
+  RECYCLE
+  CRAFT
+  TRADE
+  BATTLE_PLAY
+  BATTLE_WIN
+}
+
+enum CosmeticKind {
+  CARD_BACK
+  FRAME
+  AVATAR
+  TITLE
+}
+
+enum PurchaseStatus {
+  PENDING
+  PAID
+  REFUNDED
+  DISPUTED
+}
+
+enum BattleStatus {
+  ACTIVE
+  WON
+  LOST
+  ABANDONED
+}
+
+model User {
+  id                   String    @id @default(cuid())
+  email                String    @unique
+  passwordHash         String?
+  displayName          String    @unique
+  birthDate            DateTime  @db.Date
+  country              String    @db.Char(2)
+  role                 Role      @default(PLAYER)
+  emailVerifiedAt      DateTime?
+  parentalConsentAt    DateTime?
+  parentEmail          String?
+  monthlySpendCapCents Int?
+  tokenVersion         Int       @default(0)
+  freePacks            Int       @default(2)
+  freePacksUpdatedAt   DateTime  @default(now())
+  avatarId             String?
+  cardBackId           String?
+  frameId              String?
+  titleId              String?
+  stripeCustomerId     String?   @unique
+  blockedAt            DateTime?
+  blockedReason        String?
+  deletedAt            DateTime?
+  acceptedTermsAt      DateTime
+  createdAt            DateTime  @default(now())
+
+  tokens       EmailToken[]
+  cards        UserCard[]
+  ledger       LedgerEntry[]
+  pity         PityCounter[]
+  pulls        Pull[]
+  logins       DailyLogin[]
+  missions     MissionProgress[]
+  cosmetics    UserCosmetic[]
+  purchases    Purchase[]
+  subscription Subscription?
+  decks        Deck[]
+  battles      Battle[]
+  proposed     Trade[]           @relation("proposer")
+  received     Trade[]           @relation("receiver")
+  audit        AuditLog[]
+}
+
+model EmailToken {
+  id        String    @id @default(cuid())
+  userId    String
+  type      TokenType
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+}
+
+model CardSet {
+  id         String     @id @default(cuid())
+  code       String     @unique
+  name       String
+  releasedAt DateTime
+  cards      Card[]
+  packTypes  PackType[]
+}
+
+model Card {
+  id           String  @id @default(cuid())
+  code         String  @unique
+  setId        String
+  number       Int
+  name         String
+  rarity       Rarity
+  faction      Faction
+  hp           Int
+  attack       Int
+  abilityKey   String
+  abilityName  String
+  abilityText  String
+  abilityValue Int     @default(0)
+  lore         String
+  imageUrl     String?
+  silhouette   String
+  variant      Variant @default(NORMAL)
+  form         Form?
+  pairCode     String?
+  baseCode     String?
+  craftable    Boolean @default(true)
+  active       Boolean @default(true)
+  set          CardSet @relation(fields: [setId], references: [id])
+
+  owners     UserCard[]
+  pullCards  PullCard[]
+  featuredIn BannerFeature[]
+  tradeItems TradeItem[]
+  deckCards  DeckCard[]
+
+  @@unique([setId, number])
+  @@index([rarity])
+}
+
+model UserCard {
+  userId     String
+  cardId     String
+  quantity   Int      @default(0)
+  /// Parmi les exemplaires, ceux en finition reverse holo (≤ quantity).
+  reverseQty Int      @default(0)
+  firstAt    DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card       Card     @relation(fields: [cardId], references: [id])
+
+  @@id([userId, cardId])
+}
+
+model PackType {
+  id            String     @id @default(cuid())
+  code          String     @unique
+  name          String
+  setId         String
+  priceEmbers   Int?
+  priceShards   Int?
+  /// Chance (sur 100 000) qu'un booster contienne une carte reverse holo.
+  reverseChance Int        @default(15000)
+  set           CardSet    @relation(fields: [setId], references: [id])
+  slots         PackSlot[]
+  banners       Banner[]
+}
+
+model PackSlot {
+  id         String     @id @default(cuid())
+  packTypeId String
+  index      Int
+  packType   PackType   @relation(fields: [packTypeId], references: [id], onDelete: Cascade)
+  rates      SlotRate[]
+
+  @@unique([packTypeId, index])
+}
+
+/// Poids relatifs (sur 100 000) d'une rareté dans un slot.
+model SlotRate {
+  slotId String
+  rarity Rarity
+  weight Int
+  slot   PackSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
+
+  @@id([slotId, rarity])
+}
+
+model Banner {
+  id              String          @id @default(cuid())
+  code            String          @unique
+  name            String
+  description     String
+  packTypeId      String
+  startsAt        DateTime
+  endsAt          DateTime?
+  featuredShare   Int             @default(0)
+  epicPityEvery   Int             @default(10)
+  legendaryPityAt Int             @default(100)
+  theme           String          @default("blood")
+  active          Boolean         @default(true)
+  packType        PackType        @relation(fields: [packTypeId], references: [id])
+  featured        BannerFeature[]
+  pity            PityCounter[]
+  pulls           Pull[]
+}
+
+model BannerFeature {
+  bannerId String
+  cardId   String
+  banner   Banner @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+  card     Card   @relation(fields: [cardId], references: [id])
+
+  @@id([bannerId, cardId])
+}
+
+model PityCounter {
+  userId         String
+  bannerId       String
+  sinceEpic      Int    @default(0)
+  sinceLegendary Int    @default(0)
+  totalPacks     Int    @default(0)
+  user           User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  banner         Banner @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+
+  @@id([userId, bannerId])
+}
+
+model Pull {
+  id        String     @id @default(cuid())
+  userId    String
+  bannerId  String
+  source    PullSource
+  pity      String?
+  createdAt DateTime   @default(now())
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  banner    Banner     @relation(fields: [bannerId], references: [id])
+  cards     PullCard[]
+
+  @@index([userId, createdAt])
+}
+
+model PullCard {
+  pullId  String
+  slot    Int
+  cardId  String
+  isNew   Boolean
+  reverse Boolean @default(false)
+  pull    Pull    @relation(fields: [pullId], references: [id], onDelete: Cascade)
+  card    Card    @relation(fields: [cardId], references: [id])
+
+  @@id([pullId, slot])
+}
+
+/// Écritures immuables (trigger SQL) : le solde = SUM(amount) par devise.
+model LedgerEntry {
+  id        String       @id @default(cuid())
+  userId    String
+  currency  Currency
+  amount    Int
+  reason    LedgerReason
+  refType   String?
+  refId     String?
+  note      String?
+  createdAt DateTime     @default(now())
+  user      User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, currency])
+}
+
+model DailyLogin {
+  userId String
+  day    DateTime @db.Date
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, day])
+}
+
+model Mission {
+  id           String            @id @default(cuid())
+  code         String            @unique
+  title        String
+  period       MissionPeriod
+  kind         MissionKind
+  target       Int
+  rewardEmbers Int               @default(0)
+  rewardDust   Int               @default(0)
+  active       Boolean           @default(true)
+  progress     MissionProgress[]
+}
+
+model MissionProgress {
+  userId    String
+  missionId String
+  periodKey String
+  progress  Int       @default(0)
+  claimedAt DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mission   Mission   @relation(fields: [missionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, missionId, periodKey])
+}
+
+model Trade {
+  id         String      @id @default(cuid())
+  proposerId String
+  receiverId String
+  status     TradeStatus @default(PENDING)
+  message    String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  proposer   User        @relation("proposer", fields: [proposerId], references: [id], onDelete: Cascade)
+  receiver   User        @relation("receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  items      TradeItem[]
+
+  @@index([receiverId, status])
+  @@index([proposerId, status])
+}
+
+model TradeItem {
+  tradeId  String
+  side     TradeSide
+  cardId   String
+  quantity Int       @default(1)
+  trade    Trade     @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  card     Card      @relation(fields: [cardId], references: [id])
+
+  @@id([tradeId, side, cardId])
+}
+
+model Cosmetic {
+  id            String         @id @default(cuid())
+  code          String         @unique
+  name          String
+  kind          CosmeticKind
+  priceEmbers   Int?
+  passExclusive Boolean        @default(false)
+  owners        UserCosmetic[]
+}
+
+model UserCosmetic {
+  userId     String
+  cosmeticId String
+  acquiredAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cosmetic   Cosmetic @relation(fields: [cosmeticId], references: [id])
+
+  @@id([userId, cosmeticId])
+}
+
+model ShopProduct {
+  id            String  @id @default(cuid())
+  code          String  @unique
+  name          String
+  kind          String
+  priceCents    Int
+  currency      String  @default("eur")
+  shards        Int     @default(0)
+  stripePriceId String?
+  active        Boolean @default(true)
+}
+
+model Purchase {
+  id                  String         @id @default(cuid())
+  userId              String
+  productCode         String
+  stripeSessionId     String         @unique
+  stripePaymentIntent String?        @unique
+  amountCents         Int
+  shards              Int
+  status              PurchaseStatus @default(PENDING)
+  withdrawalWaiverAt  DateTime
+  createdAt           DateTime       @default(now())
+  user                User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, createdAt])
+}
+
+model Subscription {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  stripeSubscriptionId String?  @unique
+  status               String
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean  @default(false)
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model StripeEvent {
+  id          String   @id
+  type        String
+  processedAt DateTime @default(now())
+}
+
+model CountryConfig {
+  country          String  @id @db.Char(2)
+  paidPacksEnabled Boolean @default(true)
+  purchasesEnabled Boolean @default(true)
+}
+
+model Setting {
+  key   String @id
+  value Json
+}
+
+model Deck {
+  id        String     @id @default(cuid())
+  userId    String
+  name      String
+  updatedAt DateTime   @updatedAt
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cards     DeckCard[]
+  battles   Battle[]
+}
+
+model DeckCard {
+  deckId   String
+  cardId   String
+  quantity Int
+  deck     Deck   @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  card     Card   @relation(fields: [cardId], references: [id])
+
+  @@id([deckId, cardId])
+}
+
+model Battle {
+  id        String       @id @default(cuid())
+  userId    String
+  deckId    String?
+  status    BattleStatus @default(ACTIVE)
+  seed      Int
+  state     Json
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deck      Deck?        @relation(fields: [deckId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  target    String?
+  payload   Json?
+  createdAt DateTime @default(now())
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+}
