@@ -1,3 +1,4 @@
+import { GOUTS_DEFAUT, MOMENTS, repasPour } from './aliments';
 import type { BilanPlan, Etat, PhaseId, PlanEtat } from './etat';
 import type { Niveau, TypeSeance } from './programmes';
 import { ecartJours, iso, lireDate, lundi } from './dates';
@@ -487,12 +488,13 @@ export function consigneIntensite(t: TypeSeance): string {
 /** Objectif calorique (calculs.nutrition, Mifflin-St Jeor) + perte réaliste + repères de repas. */
 export function planNutrition(e: Etat) {
   const n = nutrition(e);
-  const repas = [
-    { id: 'petitdej', nom: 'Petit-déjeuner', part: 0.25, idee: 'Œufs ou skyr / fromage blanc, pain complet ou flocons d’avoine, un fruit.' },
-    { id: 'dejeuner', nom: 'Déjeuner', part: 0.35, idee: '½ assiette de légumes, ¼ protéines (viande maigre, poisson, œufs, légumineuses), ¼ féculents complets.' },
-    { id: 'collation', nom: 'Collation (si faim)', part: 0.1, idee: 'Yaourt nature, un fruit, une petite poignée d’amandes.' },
-    { id: 'diner', nom: 'Dîner', part: 0.3, idee: 'Même assiette que le midi, féculents un peu réduits si la journée a été très assise.' },
-  ].map(r => ({ ...r, kcal: Math.round((n.cible * r.part) / 10) * 10 }));
+  // Idées tirées des repas compatibles avec les goûts (aliments exclus, fruits aimés).
+  const gouts = e.gouts ?? GOUTS_DEFAUT;
+  const repas = MOMENTS.map(m => {
+    const options = repasPour(m.id, gouts, n.cible);
+    const idee = options.length ? options.slice(0, 3).map(o => o.repas.nom).join(' · ') : 'Ajoute des aliments que tu aimes dans Nutrition › Mes goûts.';
+    return { id: m.id, nom: m.nom, part: m.part, idee, kcal: Math.round((n.cible * m.part) / 10) * 10 };
+  });
   return {
     ...n,
     deficit: n.tdee - n.cible,

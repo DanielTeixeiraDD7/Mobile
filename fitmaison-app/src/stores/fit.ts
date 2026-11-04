@@ -5,6 +5,7 @@ import { PALIERS, SEANCES, type Niveau } from '@/core/programmes';
 import { creerPodometre } from '@/core/podometre';
 import * as calc from '@/core/calculs';
 import { toast } from '@/composables/useToast';
+import { GOUTS_DEFAUT, type Gouts } from '@/core/aliments';
 import { lancerSeance, useSeanceEnCours } from '@/composables/useSeance';
 import { nouveauPlan, reprendre } from '@/core/plan';
 
@@ -103,6 +104,10 @@ export const useFit = defineStore('fit', () => {
     etat.value.favoris = [...f];
   }
 
+  /** Goûts alimentaires (idées de repas, habitudes et conseils adaptés). */
+  const gouts = computed<Gouts>(() => etat.value.gouts ?? GOUTS_DEFAUT);
+  function majGouts(g: Gouts) { etat.value.gouts = { exclus: [...g.exclus], fruits: [...g.fruits] }; }
+
   // ----- Plan « Objectif Foot » -----
   const plan = computed(() => etat.value.plan);
   function demarrerPlan(debut = aujourdhui(), pasDepart?: number) { etat.value.plan = nouveauPlan(etat.value, debut, pasDepart); }
@@ -177,7 +182,7 @@ export const useFit = defineStore('fit', () => {
     etat, date, profil, reglages, jour, jourLu, poids, nutrition, tendance, serie, bruleAujourdhui,
     plan, demarrerPlan, majPlan, arreterPlan, ajouterBilan, supprimerBilan, reprendrePlan, forcerPhase, repondreSante, reglerRappel, verifierRappel,
     creerProfil, majProfil, niveau, ajouterPesee, supprimerPesee, eau, pause, douleur, pas, habitude, ajouterRepas, retirerRepas, reglage,
-    enregistrerSeance, noter, remplacer, annulerRemplacement, favori, importer, exporterTexte, toutEffacer,
+    enregistrerSeance, noter, remplacer, annulerRemplacement, favori, gouts, majGouts, importer, exporterTexte, toutEffacer,
     podoActif, podoSession, demarrerPodometre, arreterPodometre, sauverMaintenant,
   };
 });

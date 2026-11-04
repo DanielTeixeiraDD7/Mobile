@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useFit } from '@/stores/fit';
-import { CONSEILS, HABITUDES, JOURS, PLANNING, SEANCES } from '@/core/programmes';
+import { CONSEILS, JOURS, PLANNING, SEANCES } from '@/core/programmes';
+import { conseilsPour, habitudesPour } from '@/core/aliments';
 import { jourPlan, OBJECTIF_PAUSES } from '@/core/plan';
 import { lancerSeance } from '@/composables/useSeance';
 import { BADGES, bruleSemaine, peseesTriees, seancesSemaine } from '@/core/calculs';
@@ -16,7 +17,9 @@ const p = computed(() => fit.profil!);
 const jour = computed(() => fit.jourLu());
 const heure = new Date().getHours();
 const salut = heure < 5 ? 'Bonne nuit' : heure < 12 ? 'Bonjour' : heure < 18 ? 'Salut' : 'Bonsoir';
-const conseil = CONSEILS[new Date().getDate() % CONSEILS.length];
+const conseils = computed(() => conseilsPour(fit.gouts));
+const conseil = computed(() => conseils.value[new Date().getDate() % conseils.value.length] ?? CONSEILS[0]);
+const HABITUDES = computed(() => habitudesPour(fit.gouts));
 
 /* ——— Objectif (poids → terrain) ——— */
 const perdu = computed(() => p.value.startWeight - fit.poids);
@@ -109,9 +112,9 @@ const prochain = computed(() => badges.value.find(b => !b.ok));
 
 function habitude(id: string, v: boolean) {
   fit.habitude(id, v);
-  if (HABITUDES.every(h => fit.jourLu().habits[h.id])) celebrer('✅ Journée parfaite !');
+  if (HABITUDES.value.every(h => fit.jourLu().habits[h.id])) celebrer('✅ Journée parfaite !');
 }
-const nbHabitudes = computed(() => HABITUDES.filter(h => jour.value.habits[h.id]).length);
+const nbHabitudes = computed(() => HABITUDES.value.filter(h => jour.value.habits[h.id]).length);
 </script>
 
 <template>

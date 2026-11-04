@@ -1,4 +1,5 @@
 import type { Niveau, TypeSeance } from './programmes';
+import type { Gouts } from './aliments';
 
 /**
  * Données de l'app, au MÊME format et sous la MÊME clé que FitMaison v1 (localStorage « fitmaison_v1 »).
@@ -39,6 +40,8 @@ export interface Etat {
   remplacements?: Record<string, string>;
   /** v2 : exercices favoris. */
   favoris?: string[];
+  /** v3 : goûts alimentaires (aliments exclus, fruits aimés) pour les idées de repas. */
+  gouts?: Gouts;
   /** v3 : plan « Objectif Foot » (facultatif). */
   plan?: PlanEtat;
 }
