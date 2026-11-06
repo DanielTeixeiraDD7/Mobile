@@ -1,0 +1,121 @@
+/* RiftScan — thème « hextech » : nuit bleutée, or et cyan. */
+:root {
+  --bg: #060a14;
+  --bg-2: #0b1222;
+  --surface: #0f1729;
+  --surface-2: #152038;
+  --surface-3: #1d2a47;
+  --border: rgba(200, 170, 110, 0.16);
+  --border-2: rgba(200, 170, 110, 0.32);
+  --text: #f0e9da;
+  --muted: #a7b0c4;
+  --dim: #6f7a93;
+  --or: #c8aa6e;
+  --or-vif: #f0d48a;
+  --or-grad: linear-gradient(135deg, #f4dc9a 0%, #c8aa6e 45%, #8c6b33 100%);
+  --cyan: #0ac8b9;
+  --cyan-vif: #5ff0e3;
+  --bon: #3ddc97;
+  --mauvais: #ff6b6b;
+  --r: 18px;
+  --ombre: 0 18px 40px -18px rgba(0, 0, 0, 0.7), 0 2px 6px rgba(0, 0, 0, 0.35);
+  --tab-h: 68px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+  color-scheme: dark;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body {
+  min-height: 100dvh;
+  background:
+    radial-gradient(120% 60% at 50% -10%, rgba(10, 200, 185, 0.12), transparent 60%),
+    radial-gradient(80% 50% at 100% 0%, rgba(200, 170, 110, 0.10), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+}
+a { color: var(--cyan-vif); }
+button { font: inherit; color: inherit; }
+img { max-width: 100%; }
+:focus-visible { outline: 2px solid var(--cyan-vif); outline-offset: 2px; border-radius: 8px; }
+
+.page { max-width: 760px; margin: 0 auto; padding: calc(16px + var(--safe-t)) 16px calc(var(--tab-h) + var(--safe-b) + 28px); }
+.kicker { margin: 0; font-size: 11.5px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: var(--or); }
+.titre { margin: 4px 0 6px; font-size: 30px; line-height: 1.05; font-weight: 900; letter-spacing: 0.01em; text-transform: uppercase; }
+.titre .or { background: var(--or-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.muted { color: var(--muted); }
+.dim { color: var(--dim); }
+.small { font-size: 14px; }
+.tiny { font-size: 12.5px; }
+.num { font-variant-numeric: tabular-nums; }
+.row { display: flex; align-items: center; gap: 10px; }
+.between { justify-content: space-between; }
+.grow { flex: 1; min-width: 0; }
+.section { margin-top: 18px; }
+
+.carte-ui {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 40%), var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--ombre);
+}
+.pad { padding: 16px; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 48px; padding: 0 18px; border-radius: 14px; border: 1px solid var(--border-2);
+  background: var(--surface-2); font-weight: 800; letter-spacing: 0.02em; cursor: pointer; text-decoration: none; color: var(--text);
+  transition: transform 0.12s, filter 0.2s, background 0.2s;
+}
+.btn:active { transform: scale(0.97); }
+.btn.or { background: var(--or-grad); color: #1b1407; border-color: transparent; box-shadow: 0 10px 26px -10px rgba(240, 212, 138, 0.6); }
+.btn.cyan { background: linear-gradient(135deg, #5ff0e3, #0ac8b9 60%, #077a73); color: #032421; border-color: transparent; }
+.btn.plein { width: 100%; }
+.btn.petit { min-height: 38px; padding: 0 12px; font-size: 14px; border-radius: 12px; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.icone-btn {
+  width: 44px; height: 44px; display: grid; place-items: center; border-radius: 14px; border: 1px solid var(--border);
+  background: rgba(15, 23, 41, 0.75); backdrop-filter: blur(10px); cursor: pointer; color: var(--text);
+}
+
+.input {
+  width: 100%; min-height: 50px; padding: 0 16px; border-radius: 14px; border: 1px solid var(--border-2);
+  background: var(--surface-2); color: var(--text); font-size: 16px;
+}
+.input::placeholder { color: var(--dim); }
+
+.chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--surface); font-size: 13.5px; font-weight: 700; color: var(--muted); cursor: pointer;
+}
+.chip.on { background: rgba(200, 170, 110, 0.16); border-color: var(--or); color: var(--or-vif); }
+
+.tag { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 800; letter-spacing: 0.04em; background: var(--surface-3); color: var(--muted); }
+.tag.foil { background: linear-gradient(90deg, rgba(95, 240, 227, 0.25), rgba(200, 120, 255, 0.25), rgba(240, 212, 138, 0.25)); color: var(--text); }
+.hausse { color: var(--bon); }
+.baisse { color: var(--mauvais); }
+
+.liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.ligne-carte {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 10px; border-radius: 16px; text-decoration: none; color: inherit;
+  background: var(--surface); border: 1px solid var(--border); transition: border-color 0.2s, transform 0.12s;
+}
+.ligne-carte:active { transform: scale(0.99); }
+.ligne-carte:hover { border-color: var(--border-2); }
+.vignette { width: 52px; height: 72px; flex: none; border-radius: 6px; object-fit: cover; background: var(--surface-3); box-shadow: 0 6px 14px -6px rgba(0, 0, 0, 0.8); }
+.ligne-carte b { display: block; font-size: 15px; line-height: 1.25; }
+.ligne-carte small { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+.prix-ligne { text-align: right; font-weight: 900; font-size: 16px; white-space: nowrap; color: var(--or-vif); }
+.prix-ligne small { color: var(--dim); font-weight: 700; }
+
+.vide { text-align: center; padding: 34px 18px; color: var(--muted); }
+.vide .gros { font-size: 44px; }
+
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; }
+.fade-enter-active, .fade-leave-active { transition: opacity 0.18s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

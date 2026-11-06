@@ -1,0 +1,40 @@
+# RiftScan : copie quotidienne des cartes et prix Riftbound (TCGCSV, une fois par jour, après leur mise à jour
+# vers 20 h UTC) et du taux BCE. Les données sont publiées sur la branche « rift-data », lue par l'app.
+name: RiftScan – données du jour
+on:
+  schedule:
+    - cron: '37 22 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: riftscan-donnees
+  cancel-in-progress: false
+jobs:
+  donnees:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: riftscan-app
+      - name: Données précédentes (empreintes déjà calculées, historique)
+        run: git fetch --depth=1 origin rift-data && git worktree add --detach donnees FETCH_HEAD || mkdir -p donnees
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Dépendances
+        working-directory: riftscan-app
+        run: npm ci --no-audit --no-fund
+      - name: Mise à jour
+        working-directory: riftscan-app
+        run: node --experimental-strip-types scripts/donnees.ts ../donnees
+      - name: Publication sur rift-data (un seul commit, l'historique est dans les fichiers)
+        working-directory: donnees
+        run: |
+          git config user.name "riftscan-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan publication
+          git add -A
+          git commit -q -m "Données RiftScan du $(date -u +%F)" || exit 0
+          git push -f origin publication:rift-data
