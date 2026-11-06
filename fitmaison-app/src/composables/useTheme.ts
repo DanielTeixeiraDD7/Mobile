@@ -12,7 +12,7 @@ export function useTheme() {
   onBeforeUnmount(() => media?.removeEventListener?.('change', surChangement));
   watch(sombre, v => {
     document.documentElement.classList.toggle('dark', v);
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', v ? '#0f1115' : '#f5f5f8');
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', v ? '#070b09' : '#f2f5ef');
   }, { immediate: true });
   watch(theme, v => { try { localStorage.setItem('fitmaison:theme', v); } catch { /* ignoré */ } }, { immediate: true });
 }

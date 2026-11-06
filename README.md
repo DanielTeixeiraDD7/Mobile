@@ -1,16 +1,16 @@
 > Ce dépôt contient sept apps : **[Nocturne](nocturne-tcg/README.md)** (jeu de cartes gothique gacha/TCG ; source `nocturne-tcg/`, démo `nocturne/`, https://danielteixeiradd7.github.io/Mobile/nocturne/), **FitMaison** (source `fitmaison-app/`, build à la racine, ci-dessous ; ancienne version : `fitmaison-v1/`), **[Budget v2](budget-app/README.md)** (source `budget-app/`, build `budget/`, https://danielteixeiradd7.github.io/Mobile/budget/ ; ancienne version : `budget-v1/`), **[ScreenPilot](screenpilot/README.md)** (films, séries, anime, manga + temps d'écran ; source `screenpilot/`, build `anime/`, https://danielteixeiradd7.github.io/Mobile/anime/ ; remplace AnimePilot, dont la source reste dans `animepilot/`), **[Esport Companion](esport-companion/README.md)** (source `esport-companion/`, build `esport/`, https://danielteixeiradd7.github.io/Mobile/esport/), **[Vue Express](vue-express/README.md)** (source `vue-express/`, build `vue/`, https://danielteixeiradd7.github.io/Mobile/vue/) et **[AutoRadar](autoradar/README.md)** (source `autoradar/`, build `auto/`, https://danielteixeiradd7.github.io/Mobile/auto/).
 
-# FitMaison 🔥 – Perte de poids au poids du corps (v2, Vue 3)
+# FitMaison ⚽ – Objectif Foot : perte de poids au poids du corps (v3, Vue 3)
 
-PWA pour perdre du poids avec des séances **sans matériel et sans saut**, à la maison ou au jardin. Hors-ligne, installable (iPhone / Android), données sur le téléphone. https://danielteixeiradd7.github.io/Mobile/
+PWA pour perdre du poids et retrouver du souffle avec des séances **sans matériel et sans saut**, à la maison ou au jardin, jusqu'au retour sur un terrain de foot. Hors-ligne, installable (iPhone / Android), données sur le téléphone. https://danielteixeiradd7.github.io/Mobile/
 
 ## Fonctionnalités
-- **Chaque exercice expliqué** : figurine animée (pause, ralenti, zone travaillée en orange), position de départ, étapes numérotées, respiration, tempo, points clés ✓, erreurs fréquentes ✗, ce que tu dois sentir, version plus facile / plus dure, sécurité, matériel (chaise, mur, marche…)
-- **Lecteur de séance** : démo de 15 s avant un exercice jamais fait, consignes qui défilent, aperçu de l'exercice suivant pendant le repos, « Comment faire ? », « Trop dur ? » (remplacé et mémorisé), annonce « change de côté », bips, voix, vibrations, écran allumé
-- Séances Full body, Cardio doux, Renfo & gainage, Marche active, Mobilité ; 3 niveaux ajustés selon le ressenti ; planning hebdo
-- **Bibliothèque** : 32 exercices, recherche, catégories, favoris
-- **Poids** (courbe, moyenne 7 j, tendance, objectif, IMC, paliers), **nutrition** (Mifflin-St Jeor, protéines, eau, repas), habitudes, pas, série, badges
-- Thème clair / sombre, export / import JSON
+- **Plan « Objectif Foot »** (24 semaines minimum, 4 phases : Réveil → Fondations → Moteur → Retour terrain), jour par jour, avec bilans simples (marche de 6 min, assis-debout, escaliers…) pour passer à la phase suivante, règle de la douleur (genoux / dos), reprise douce après une pause, questionnaire santé inspiré du PAR-Q+, objectifs de pas progressifs. Sources dans `fitmaison-app/PLAN.md`.
+- **Coach animé façon vidéo** : personnage illustré (silhouette mince ou costaud), décors salon / jardin / bureau, ralenti 0,25× et 0,5×, timeline, sous-titres des étapes, voix, miroir, plein écran.
+- **50 exercices** expliqués (position de départ, étapes, respiration, points clés, erreurs, sensations, versions plus facile / plus dure), dont **pauses bureau** (anti-sédentarité) et **football** (conduite de balle, passes contre un mur, semelle, slalom, frappe, équilibre).
+- **Mode bureau** : pause active de 4 min et rappel pendant les heures de travail (notification seulement si activée).
+- Séances Full body, Cardio doux, Renfo, Marche, Mobilité, Souffle, Intervalles, Technique balle, Prévention, Marche / trottinement ; lecteur avec démo, « Trop dur ? », voix, bips, vibrations, écran allumé.
+- **Progrès** (courbe, tendance, jalons vers le terrain), **nutrition** (Mifflin-St Jeor, repères de repas), habitudes, pas, eau, série, badges ; thème clair / sombre ; export / import JSON.
 
 ## Développement
 ```bash

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { charger, lireSauvegarde, normaliser, CLE, type Etat } from '../src/core/etat';
-import { brule, nutrition, serie, tendance, kcalSeance } from '../src/core/calculs';
-import { construire, duree, materielSeance, exercicesSeance, DUREE_DEMO } from '../src/core/seance';
+import { brule, nutrition, serie, tendance, kcalSeance, seancesSemaine } from '../src/core/calculs';
+import { construire, duree, materielSeance, exercicesSeance, DUREE_DEMO, PAUSE_BUREAU } from '../src/core/seance';
 import { EXERCICES } from '../src/core/exercices';
 import { SEANCES, ECHAUFFEMENT, RETOUR_CALME, MOBILITE } from '../src/core/programmes';
 
@@ -52,6 +52,11 @@ describe('calculs (mêmes formules que la v1)', () => {
     expect(b.marche).toBe(Math.round((9000 - 2100) * 120.1 * 0.0004));
   });
   it('série de jours', () => { expect(serie(e, new Date('2026-10-18T20:00:00'))).toBe(2); });
+  it('une pause bureau ne compte pas comme une séance (série, semaine)', () => {
+    const b = normaliser({ ...e, sessions: [...e.sessions, { date: '2026-10-19', type: 'bureau', level: 1, duration: 240, kcal: 12, feel: 0 }] });
+    expect(serie(b, new Date('2026-10-19T20:00:00'))).toBe(2);
+    expect(seancesSemaine(b, new Date('2026-10-19T20:00:00'))).toHaveLength(0);
+  });
   it('kcal d’une séance', () => { expect(kcalSeance([{ met: 5, dur: 3600 }], 100)).toBe(500); });
 });
 
@@ -62,7 +67,9 @@ describe('séances', () => {
     expect(duree(construire('mobilite', 2))).toBe(MOBILITE.length * 60);
   });
   it('tous les exercices des programmes existent et ont une animation', () => {
-    const ids = new Set([...ECHAUFFEMENT, ...RETOUR_CALME, ...MOBILITE, 'marche_normale', 'marche_rapide', ...Object.values(SEANCES).flatMap(s => (s.circuit ? Object.values(s.circuit).flat() : []))]);
+    const ids = new Set([...ECHAUFFEMENT, ...RETOUR_CALME, ...MOBILITE, 'marche_normale', 'marche_rapide', ...Object.values(SEANCES).flatMap(s => (s.circuit ? Object.values(s.circuit).flat() : [])),
+      // v3 : séances du plan (bureau, souffle, foot, prévention, marche / trottinement)
+      ...PAUSE_BUREAU.map(([k]) => k), 'respiration_ventrale', 'marche_course', 'marche_laterale', 'etirement_flechisseurs', 'step_up']);
     for (const id of ids) { expect(EXERCICES[id], id).toBeDefined(); expect(EXERCICES[id]!.anim.poses.length).toBeGreaterThan(0); }
   });
   it('démo de 15 s avant chaque exercice jamais fait (une seule fois)', () => {

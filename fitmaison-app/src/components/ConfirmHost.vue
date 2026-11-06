@@ -18,6 +18,6 @@ const ouvert = computed({ get: () => !!demande.value, set: v => { if (!v) repond
 </template>
 
 <style scoped>
-.msg { font-size: 16.5px; margin: 4px 0 18px; line-height: 1.45; }
+.msg { font-size: 16.5px; margin: 4px 0 18px; line-height: 1.45; color: var(--muted); }
 .actions { display: grid; gap: 8px; }
 </style>
