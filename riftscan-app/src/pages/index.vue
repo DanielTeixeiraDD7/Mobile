@@ -82,11 +82,17 @@ function boucle() {
   if (top && top.score >= SEUIL_SUR) {
     // Deux images de suite d'accord (même carte ou même nom) : c'est la bonne.
     const nom = rift.carte(top.id)?.n.replace(/\s*\(.*?\)/g, '');
+    if (ignoree && ignoree.nom === nom && Date.now() < ignoree.jusqua) {
+      indice.value = 'Place la carte suivante dans le cadre';
+      minuterie = window.setTimeout(boucle, 280);
+      return;
+    }
     if (precedent === nom) { trouver(res!); return; }
     precedent = nom ?? null;
     indice.value = 'Ne bouge plus…';
   } else {
     precedent = null;
+    ignoree = null; // la carte précédente a quitté le cadre
     indice.value = top && top.score >= SEUIL_POSSIBLE ? 'Rapproche la carte pour qu’elle remplisse le cadre' : 'Place une carte dans le cadre';
   }
   minuterie = window.setTimeout(boucle, 280);
@@ -98,7 +104,31 @@ function trouver(res: Candidat[]) {
   rift.noterScan(garde[0]!.id);
   navigator.vibrate?.(30);
 }
-function encore() { resultats.value = null; precedent = null; boucle(); }
+/** Carte du dernier résultat : ignorée tant qu'elle reste dans le cadre, pour ne pas rouvrir le même résultat. */
+let ignoree: { nom: string; jusqua: number } | null = null;
+function encore() {
+  const id = resultats.value?.[0]?.id;
+  const nom = id ? rift.carte(id)?.n.replace(/\s*\(.*?\)/g, '') : undefined;
+  ignoree = nom ? { nom, jusqua: Date.now() + 4000 } : null;
+  resultats.value = null; precedent = null; decalage.value = 0;
+  boucle();
+}
+
+// Glisser la feuille vers le bas pour la fermer (quand son contenu est tout en haut).
+const feuille = useTemplateRef<HTMLDivElement>('feuille');
+const decalage = ref(0);
+let departY: number | null = null;
+function debutGlisse(e: TouchEvent) { departY = (feuille.value?.scrollTop ?? 0) <= 0 ? e.touches[0]!.clientY : null; }
+function glisse(e: TouchEvent) {
+  if (departY == null) return;
+  const dy = e.touches[0]!.clientY - departY;
+  if (dy > 0) { decalage.value = dy; e.preventDefault(); } else { decalage.value = 0; departY = null; }
+}
+function finGlisse() {
+  if (departY == null) return;
+  departY = null;
+  if (decalage.value > 90) encore(); else decalage.value = 0;
+}
 
 // Photo importée (ou appareil sans caméra accessible)
 const fichier = useTemplateRef<HTMLInputElement>('fichier');
@@ -165,11 +195,15 @@ function visibilite() {
     </div>
     <input ref="fichier" type="file" accept="image/*" class="sr-only" tabindex="-1" @change="photo">
 
-    <transition name="monte">
-      <div v-if="resultats" class="feuille" role="dialog" aria-modal="true" aria-label="Carte reconnue">
-        <CarteResultat :candidats="resultats" @fermer="encore" />
-      </div>
-    </transition>
+    <Teleport to="body">
+      <transition name="fond"><div v-if="resultats" class="voile" aria-hidden="true" @click="encore" /></transition>
+      <transition name="monte">
+        <div v-if="resultats" ref="feuille" class="feuille" :class="{ glisse: decalage > 0 }" :style="decalage ? { transform: `translateY(${decalage}px)` } : undefined" role="dialog" aria-modal="true" aria-label="Carte reconnue"
+          @touchstart.passive="debutGlisse" @touchmove="glisse" @touchend="finGlisse" @touchcancel="finGlisse">
+          <CarteResultat :candidats="resultats" @fermer="encore" />
+        </div>
+      </transition>
+    </Teleport>
   </div>
 </template>
 
@@ -211,11 +245,15 @@ function visibilite() {
 }
 .outils { position: absolute; right: 16px; bottom: calc(var(--tab-h) + var(--safe-b) + 26px); z-index: 3; display: grid; gap: 10px; }
 .icone-btn.allume { background: var(--or-grad); color: #1b1407; }
+.voile { position: fixed; inset: 0; z-index: 59; background: rgba(3, 6, 14, 0.35); }
+.fond-enter-active, .fond-leave-active { transition: opacity 0.2s; }
+.fond-enter-from, .fond-leave-to { opacity: 0; }
 .feuille {
-  position: absolute; left: 0; right: 0; bottom: 0; z-index: 60; max-height: 88dvh; overflow-y: auto;
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; overscroll-behavior: contain; transition: transform 0.22s ease; max-height: 88dvh; overflow-y: auto;
   padding: 18px 16px calc(18px + var(--safe-b)); border-radius: 26px 26px 0 0;
   background: linear-gradient(180deg, #152038, var(--bg-2) 30%); border-top: 1px solid var(--border-2); box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.6);
 }
+.feuille.glisse { transition: none; }
 .monte-enter-active, .monte-leave-active { transition: transform 0.28s cubic-bezier(.2, .9, .3, 1.1), opacity 0.2s; }
 .monte-enter-from, .monte-leave-to { transform: translateY(100%); opacity: 0.4; }
 </style>

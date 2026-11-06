@@ -27,7 +27,10 @@ function ajouter() { rift.ajouter(choisi.value, finition.value); ajoute.value = 
 
 <template>
   <div class="res">
-    <div class="poignee" aria-hidden="true" />
+    <div class="entete">
+      <div class="poignee" aria-hidden="true" />
+      <button type="button" class="icone-btn fermer" aria-label="Fermer et scanner une autre carte" @click="emit('fermer')"><Icone nom="fermer" /></button>
+    </div>
     <div class="haut">
       <CarteImg :src="carte.img" :nom="carte.n" taille="400w" class="img" />
       <div class="grow">
@@ -39,7 +42,7 @@ function ajouter() { rift.ajouter(choisi.value, finition.value); ajoute.value = 
     </div>
     <BlocPrix :id="carte.id" :finition="finition" class="section" />
     <div class="boutons section">
-      <button type="button" class="btn or" @click="ajouter"><Icone :nom="ajoute ? 'check' : 'plus'" /> {{ ajoute ? 'Ajoutée' : 'Ma collection' }}<span v-if="rift.qte(carte.id, finition)" class="num"> ({{ rift.qte(carte.id, finition) }})</span></button>
+      <button type="button" class="btn or" @click="ajouter"><Icone :nom="ajoute ? 'check' : 'plus'" /> {{ ajoute ? 'Ajoutée' : 'Collection' }}<b v-if="rift.qte(carte.id, finition)" class="compte num">{{ rift.qte(carte.id, finition) }}</b></button>
       <router-link :to="`/carte/${carte.id}`" class="btn">Fiche détaillée</router-link>
     </div>
     <section v-if="autres.length" class="section">
@@ -56,7 +59,11 @@ function ajouter() { rift.ajouter(choisi.value, finition.value); ajoute.value = 
 </template>
 
 <style scoped>
-.poignee { width: 44px; height: 5px; border-radius: 3px; background: var(--surface-3); margin: -6px auto 14px; }
+.entete { position: relative; height: 30px; margin: -8px 0 6px; }
+.poignee { position: absolute; left: 50%; top: 4px; transform: translateX(-50%); width: 44px; height: 5px; border-radius: 3px; background: var(--surface-3); }
+.fermer { position: absolute; right: -4px; top: -4px; width: 40px; height: 40px; }
+.compte { min-width: 24px; height: 24px; padding: 0 6px; border-radius: 12px; background: rgba(27, 20, 7, 0.85); color: var(--or-vif); font-size: 13px; display: grid; place-items: center; }
+.boutons .btn { white-space: nowrap; }
 .haut { display: flex; gap: 16px; align-items: flex-start; }
 .img { width: 132px; height: auto; border-radius: 8px; flex: none; box-shadow: 0 16px 34px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px var(--border-2); }
 .nom { margin: 4px 0 2px; font-size: 22px; line-height: 1.15; font-weight: 900; }

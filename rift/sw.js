@@ -1,6 +1,6 @@
 /* Service worker RiftScan — généré au build (voir vite.config.ts). */
-const VERSION = 'riftscan-app-4567794369';
-const ASSETS = ["./","assets/collection-BPcfYwoF.css","assets/collection-CkyLmzN5.js","assets/id-BaeVrz5R.js","assets/id-DmmC57go.css","assets/index-CBXqqojC.js","assets/index-DSaohEG_.css","assets/infos-DA78TGqa.css","assets/infos-xXN9Dwjp.js","assets/recherche-C6_nFOF1.css","assets/recherche-XdJK8Z-1.js","manifest.webmanifest","icons/icon.svg","icons/icon-192.png","icons/icon-512.png","icons/apple-touch-icon.png"];
+const VERSION = 'riftscan-app-72493435c8';
+const ASSETS = ["./","assets/collection-BPcfYwoF.css","assets/collection-CI38sDdd.js","assets/id-CQdLG9gE.js","assets/id-DmmC57go.css","assets/index-0hvb_ULc.css","assets/index-De-Xr0yb.js","assets/infos-BmHsgW6H.js","assets/infos-DA78TGqa.css","assets/recherche-B2FGdqOR.js","assets/recherche-C6_nFOF1.css","manifest.webmanifest","icons/icon.svg","icons/icon-192.png","icons/icon-512.png","icons/apple-touch-icon.png"];
 // RiftScan vit dans rift/ : on ne touche qu'à nos propres fichiers et caches.
 // Les données (cartes, prix, empreintes) ont leur propre cache, géré par l'app (core/donnees.ts).
 const NOTRE = new Set(ASSETS.map(a => new URL(a, self.registration.scope).href));
